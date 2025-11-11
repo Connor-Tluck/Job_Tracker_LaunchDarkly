@@ -2,32 +2,37 @@ import { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
-  size?: "sm" | "md" | "lg";
+  variant?: "default" | "primary" | "outline" | "ghost" | "danger";
+  size?: "xs" | "sm" | "md" | "lg";
   children: ReactNode;
 }
 
 export function Button({
-  variant = "primary",
+  variant = "default",
   size = "md",
   className,
   children,
   ...props
 }: ButtonProps) {
-  const baseStyles = "font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed";
-  
+  const baseStyles =
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed";
+
   const variants = {
-    primary: "bg-primary hover:bg-primary-hover text-white",
-    secondary: "bg-background-secondary hover:bg-background-tertiary text-foreground",
-    outline: "border border-border hover:bg-background-secondary text-foreground",
-    ghost: "hover:bg-background-secondary text-foreground-secondary hover:text-foreground",
-    danger: "bg-red-600 hover:bg-red-700 text-white",
+    default:
+      "bg-background-tertiary text-foreground border border-border-subtle hover:bg-background-elevated",
+    primary: "bg-primary text-white hover:bg-primary-hover",
+    outline:
+      "border border-border-subtle text-foreground hover:border-foreground-subtle hover:bg-background-tertiary",
+    ghost:
+      "text-foreground-secondary hover:text-foreground hover:bg-background-tertiary",
+    danger: "bg-danger/90 text-white hover:bg-danger",
   };
 
   const sizes = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-sm",
-    lg: "px-6 py-3 text-base",
+    xs: "h-7 px-2 text-xs",
+    sm: "h-8 px-3 text-xs",
+    md: "h-9 px-4 text-sm",
+    lg: "h-11 px-5 text-sm",
   };
 
   return (

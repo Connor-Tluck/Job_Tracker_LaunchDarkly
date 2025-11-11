@@ -7,21 +7,15 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  maxVisiblePages?: number;
 }
 
 export function Pagination({
   currentPage,
   totalPages,
   onPageChange,
+  maxVisiblePages = 5,
 }: PaginationProps) {
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const visiblePages = pages.filter(
-    (page) =>
-      page === 1 ||
-      page === totalPages ||
-      (page >= currentPage - 1 && page <= currentPage + 1)
-  );
-
   const goToPage = (page: number) => {
     const clampedPage = Math.max(1, Math.min(totalPages, page));
     if (clampedPage !== currentPage) {
@@ -29,52 +23,62 @@ export function Pagination({
     }
   };
 
+  // Calculate which pages to show (always show maxVisiblePages number of pages)
+  const getVisiblePages = () => {
+    if (totalPages <= maxVisiblePages) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    let start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let end = Math.min(totalPages, start + maxVisiblePages - 1);
+
+    // Adjust start if we're near the end
+    if (end - start < maxVisiblePages - 1) {
+      start = Math.max(1, end - maxVisiblePages + 1);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const visiblePages = getVisiblePages();
+
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => goToPage(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Previous
-        </Button>
-        <div className="flex items-center space-x-1">
-          {visiblePages.map((page, index) => {
-            const showEllipsis =
-              index > 0 && page - visiblePages[index - 1] > 1;
-            return (
-              <div key={page} className="flex items-center space-x-1">
-                {showEllipsis && (
-                  <span className="px-2 text-foreground-secondary">...</span>
-                )}
-                <Button
-                  variant={currentPage === page ? "primary" : "outline"}
-                  size="sm"
-                  onClick={() => goToPage(page)}
-                  className="min-w-[2.5rem]"
-                >
-                  {page}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          Next
-          <ChevronRight className="w-4 h-4" />
-        </Button>
+    <div className="flex items-center justify-between px-4 py-3 border-t border-border min-h-[3.5rem]">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => goToPage(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex-shrink-0"
+      >
+        <ChevronLeft className="w-4 h-4" />
+        Previous
+      </Button>
+      
+      <div className="flex items-center justify-center flex-1 gap-1">
+        {visiblePages.map((page) => (
+          <Button
+            key={page}
+            variant={currentPage === page ? "primary" : "outline"}
+            size="sm"
+            onClick={() => goToPage(page)}
+            className="min-w-[2.5rem]"
+          >
+            {page}
+          </Button>
+        ))}
       </div>
-      <div className="text-sm text-foreground-secondary">
-        Page {currentPage} of {totalPages}
-      </div>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => goToPage(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex-shrink-0"
+      >
+        Next
+        <ChevronRight className="w-4 h-4" />
+      </Button>
     </div>
   );
 }

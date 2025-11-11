@@ -7,8 +7,20 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground text-sm;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1 {
+    @apply text-2xl font-semibold text-foreground;
+  }
+  h2 {
+    @apply text-xl font-semibold text-foreground;
+  }
+  h3 {
+    @apply text-lg font-medium text-foreground;
+  }
+  p {
+    @apply text-sm text-foreground-secondary leading-relaxed;
   }
 }
 

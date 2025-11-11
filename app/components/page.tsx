@@ -6,10 +6,13 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { Card } from "@/components/ui/Card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/Table";
 import { Pagination } from "@/components/ui/Pagination";
+import { Modal } from "@/components/ui/Modal";
 import { ChevronDown, Plus, Edit, Trash2, Settings } from "lucide-react";
 
 export default function ComponentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalSize, setModalSize] = useState<"sm" | "md" | "lg" | "xl">("md");
 
   return (
     <div className="space-y-8">
@@ -26,7 +29,7 @@ export default function ComponentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card>
             <h3 className="text-sm font-semibold mb-3 text-foreground-secondary">Variants</h3>
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
               <Button variant="primary">Primary Button</Button>
               <Button variant="secondary">Secondary Button</Button>
               <Button variant="outline">Outline Button</Button>
@@ -37,7 +40,7 @@ export default function ComponentsPage() {
 
           <Card>
             <h3 className="text-sm font-semibold mb-3 text-foreground-secondary">Sizes</h3>
-            <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button size="sm">Small Button</Button>
               <Button size="md">Medium Button</Button>
               <Button size="lg">Large Button</Button>
@@ -46,7 +49,7 @@ export default function ComponentsPage() {
 
           <Card>
             <h3 className="text-sm font-semibold mb-3 text-foreground-secondary">With Icons</h3>
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Item
@@ -223,6 +226,61 @@ export default function ComponentsPage() {
           />
         </Card>
       </section>
+
+      {/* Modals Section */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Modals</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <h3 className="text-sm font-semibold mb-3 text-foreground-secondary">Small Modal</h3>
+            <Button onClick={() => { setModalSize("sm"); setIsModalOpen(true); }}>
+              Open Small Modal
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="text-sm font-semibold mb-3 text-foreground-secondary">Medium Modal</h3>
+            <Button onClick={() => { setModalSize("md"); setIsModalOpen(true); }}>
+              Open Medium Modal
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="text-sm font-semibold mb-3 text-foreground-secondary">Large Modal</h3>
+            <Button onClick={() => { setModalSize("lg"); setIsModalOpen(true); }}>
+              Open Large Modal
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="text-sm font-semibold mb-3 text-foreground-secondary">Extra Large Modal</h3>
+            <Button onClick={() => { setModalSize("xl"); setIsModalOpen(true); }}>
+              Open XL Modal
+            </Button>
+          </Card>
+        </div>
+      </section>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={`${modalSize.toUpperCase()} Modal Example`}
+        size={modalSize}
+      >
+        <div className="space-y-4">
+          <p className="text-foreground-secondary">
+            This is a {modalSize} sized modal. You can use modals to display forms, confirmations, or additional content.
+          </p>
+          <div className="flex items-center justify-end space-x-2 pt-4 border-t border-border">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setIsModalOpen(false)}>
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -10,27 +10,29 @@ const config: Config = {
     extend: {
       colors: {
         background: {
-          DEFAULT: "#0a0a0a",
-          secondary: "#1a1a1a",
-          tertiary: "#2a2a2a",
+          DEFAULT: "#0d1014",
+          secondary: "#13171d",
+          tertiary: "#1c2129",
+          elevated: "#232933",
         },
         foreground: {
-          DEFAULT: "#ffffff",
-          secondary: "#a0a0a0",
-          muted: "#6a6a6a",
+          DEFAULT: "#e5e7eb",
+          secondary: "#9ca3af",
+          muted: "#6b7280",
+          subtle: "#4b5563",
         },
         border: {
-          DEFAULT: "#2a2a2a",
-          light: "#3a3a3a",
+          DEFAULT: "#1f242d",
+          subtle: "#2a303b",
         },
         primary: {
-          DEFAULT: "#6366f1",
-          hover: "#818cf8",
+          DEFAULT: "#10a37f",
+          hover: "#1ab68f",
         },
-        accent: {
-          DEFAULT: "#8b5cf6",
-          hover: "#a78bfa",
-        },
+        info: "#38bdf8",
+        success: "#22c55e",
+        warning: "#f59e0b",
+        danger: "#ef4444",
       },
     },
   },

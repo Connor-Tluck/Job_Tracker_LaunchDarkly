@@ -4,15 +4,23 @@ A modern, modular UI/UX template built with Next.js, TypeScript, Tailwind CSS, a
 
 ## Features
 
-- 🎨 **Modern Dark Theme UI** - Clean, professional dark theme design
-- 🧩 **Modular Components** - Reusable, well-organized component library
-- 📱 **Responsive Layout** - Works seamlessly on all device sizes
-- 🔐 **Optional Authentication** - Google OAuth integration (can be disabled)
-- 🗄️ **Supabase Integration** - Ready-to-use database setup with SQL schema
-- 🚀 **Frontend-Only Mode** - Run without database access for frontend development
-- 📄 **Example Pages** - Multiple layout patterns and use cases
-- 🎯 **TypeScript** - Full type safety throughout
-- ⚡ **Next.js 14** - Latest App Router with server components
+- **Modern Dark Theme UI** - Clean, professional dark theme design
+- **Modular Components** - Reusable, well-organized component library
+- **Responsive Layout** - Works seamlessly on all device sizes
+- **Optional Authentication** - Google OAuth integration (can be disabled)
+- **Supabase Integration** - Ready-to-use database setup with SQL schema
+- **Frontend-Only Mode** - Run without database access for frontend development
+- **Example Pages** - Multiple layout patterns and use cases
+- **TypeScript** - Full type safety throughout
+- **Next.js 14** - Latest App Router with server components
+
+## UI Examples
+
+![Dashboard Example](./app/images/Screenshot%202025-11-11%20at%2010.59.32%20AM.png)
+
+![Analytics Example](./app/images/Screenshot%202025-11-11%20at%2010.59.45%20AM.png)
+
+![Component Library](./app/images/Screenshot%202025-11-11%20at%2010.59.52%20AM.png)
 
 ## Quick Start
 
@@ -182,6 +190,7 @@ npm run lint
 - **Tailwind CSS** - Utility-first CSS
 - **Supabase** - Backend as a service
 - **Lucide React** - Icon library
+- **Chart.js** - Data visualization library
 
 ## License
 
@@ -193,5 +202,5 @@ For issues, questions, or contributions, please open an issue on the repository.
 
 ---
 
-Built with ❤️ for rapid application development
+Built for rapid application development
 
