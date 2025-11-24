@@ -5,7 +5,7 @@ import { prepDocs as initialPrepDocs, PrepDoc } from "@/lib/mock-data";
 import { Button } from "@/components/ui/Button";
 import { Edit2, ArrowLeft, FileText, CheckCircle2, MessageSquare, Users, Target, ListChecks, Check, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PrepDocModal } from "@/components/prep/PrepDocModal";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,7 @@ export default function CompanyPrepDetailPage({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string | string[]>("");
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const prepDoc = prepDocs[params.companyId];
 
@@ -126,6 +127,41 @@ export default function CompanyPrepDetailPage({
     },
   ];
 
+  // Intersection Observer for scroll-based active section detection
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px",
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    sections.forEach((section) => {
+      const element = document.getElementById(section.id);
+      if (element) {
+        sectionRefs.current[section.id] = element;
+        observer.observe(element);
+      }
+    });
+
+    return () => {
+      Object.values(sectionRefs.current).forEach((element) => {
+        if (element) {
+          observer.unobserve(element);
+        }
+      });
+    };
+  }, [sections.map((s) => s.id).join(",")]);
+
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Sidebar Navigation */}
@@ -197,7 +233,9 @@ export default function CompanyPrepDetailPage({
                   key={section.id}
                   id={section.id}
                   className="scroll-mt-8"
-                  onMouseEnter={() => setActiveSection(section.id)}
+                  ref={(el) => {
+                    sectionRefs.current[section.id] = el;
+                  }}
                 >
                   <div className="flex items-center justify-between mb-4 group">
                     <div className="flex items-center gap-3">
