@@ -33,7 +33,7 @@ export function AuthButton() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const handleSignIn = async () => {
     const authEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTH === "true";

@@ -3,30 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  MessageSquare,
-  Users,
-  Settings,
-  BarChart3,
-  FileText,
-  Database,
-  Zap,
-  Target,
-  Wrench,
-  Image as ImageIcon,
-  Video,
-  Music,
-  MapPin,
-  CheckSquare,
+  Notebook,
+  Table as TableIcon,
+  TrendingUp,
+  Star,
+  Layers,
+  CalendarClock,
+  LucideIcon,
+  StickyNote,
+  FolderTree,
   Building2,
-  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
   name: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
 }
 
 interface NavSection {
@@ -36,32 +29,26 @@ interface NavSection {
 
 const navigation: NavSection[] = [
   {
-    title: "Create",
+    title: "Pipeline",
     items: [
-      { name: "Component Library", href: "/components", icon: Package },
-      { name: "Dashboard Example", href: "/examples/dashboard", icon: LayoutDashboard },
-      { name: "Chat Interface", href: "/examples/chat", icon: MessageSquare },
-      { name: "User Management", href: "/examples/users", icon: Users },
-      { name: "Task Tracking", href: "/examples/tasks", icon: CheckSquare },
-      { name: "Mapping App", href: "/examples/mapping", icon: MapPin },
-      { name: "Media Gallery", href: "/examples/media", icon: ImageIcon },
+      { name: "Jobs Table", href: "/jobs", icon: TableIcon },
+      { name: "Analytics", href: "/analytics", icon: TrendingUp },
+      { name: "Timeline", href: "/jobs?view=timeline", icon: CalendarClock },
     ],
   },
   {
-    title: "Manage",
+    title: "Preparation",
     items: [
-      { name: "Analytics", href: "/examples/analytics", icon: BarChart3 },
-      { name: "Documents", href: "/examples/documents", icon: FileText },
-      { name: "Data Storage", href: "/examples/storage", icon: Database },
-      { name: "Settings", href: "/examples/settings", icon: Settings },
+      { name: "Master Prep", href: "/prep", icon: Notebook },
+      { name: "Company Prep", href: "/prep/companies", icon: Building2 },
+      { name: "STAR Stories", href: "/star-stories", icon: Star },
     ],
   },
   {
-    title: "Optimize",
+    title: "System",
     items: [
-      { name: "Performance", href: "/examples/performance", icon: Zap },
-      { name: "Evaluation", href: "/examples/evaluation", icon: Target },
-      { name: "Configuration", href: "/examples/config", icon: Wrench },
+      { name: "Component Library", href: "/components", icon: Layers },
+      { name: "Examples", href: "/examples", icon: FolderTree },
     ],
   },
 ];
@@ -77,9 +64,9 @@ export function Sidebar() {
             P
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-foreground">Personal</div>
+            <div className="text-sm font-medium text-foreground">Job Search OS</div>
             <div className="text-xs text-foreground-secondary truncate">
-              Project Template
+              Local Workspace
             </div>
           </div>
         </div>
@@ -92,12 +79,12 @@ export function Sidebar() {
               {section.title}
             </div>
             <div className="space-y-1">
-              {section.items.map((item) => {
+              {section.items.map((item, idx) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
                 return (
                   <Link
-                    key={item.href}
+                    key={`${section.title}-${item.name}-${idx}`}
                     href={item.href}
                     className={cn(
                       "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -116,18 +103,8 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-border">
-        <div className="bg-background-tertiary rounded-lg p-3 text-xs">
-          <div className="flex items-start justify-between mb-2">
-            <span className="font-medium text-foreground">Template Info</span>
-            <button className="text-foreground-secondary hover:text-foreground">
-              ×
-            </button>
-          </div>
-          <p className="text-foreground-secondary text-[10px] leading-relaxed">
-            This is a modular template for building modern applications.
-          </p>
-        </div>
+      <div className="p-4 border-t border-border text-[11px] text-foreground-secondary leading-relaxed">
+        <p>Next: wire up Google Sheets + Drive sync with Supabase or local cache.</p>
       </div>
     </aside>
   );
