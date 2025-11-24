@@ -1,171 +1,177 @@
-# Front End Template
+# Job Tracker - Job Search Management System
 
-A modern, modular UI/UX template built with Next.js, TypeScript, Tailwind CSS, and Supabase. This template is designed to be a starting point for building dashboards, task tracking apps, mapping applications, user management systems, and more.
+A comprehensive web application for managing your job search pipeline, interview preparation, and application tracking. Built with Next.js, TypeScript, and Tailwind CSS.
+
+## Overview
+
+Job Tracker helps you stay organized throughout your job search by providing:
+- **Application Tracking** - Google Sheets-style table to track all your job applications
+- **Company Prep Documents** - Create and manage company-specific interview preparation materials
+- **STAR Stories Library** - Build and organize your behavioral interview stories
+- **Analytics Dashboard** - Track your application pipeline, response rates, and interview progress
+- **Master Prep Hub** - Centralized location for general interview preparation materials
 
 ## Features
 
-- **Modern Dark Theme UI** - Clean, professional dark theme design
-- **Modular Components** - Reusable, well-organized component library
-- **Responsive Layout** - Works seamlessly on all device sizes
-- **Optional Authentication** - Google OAuth integration (can be disabled)
-- **Supabase Integration** - Ready-to-use database setup with SQL schema
-- **Frontend-Only Mode** - Run without database access for frontend development
-- **Example Pages** - Multiple layout patterns and use cases
-- **TypeScript** - Full type safety throughout
-- **Next.js 14** - Latest App Router with server components
+### 📊 Job Tracker
+- **Sheets-style table** with filters, search, and status tracking
+- **CSV import** - Import jobs from Google Sheets or CSV files
+- **Inline editing** - Edit job information directly in the table
+- **Timeline view** - See all application activity in chronological order
+- **Quick prep links** - Jump directly to company-specific prep documents
 
-## UI Examples
+### 📝 Company Prep Documents
+- **Sidebar navigation** - Quick access to all sections during interviews
+- **Inline editing** - Edit any section directly on the page
+- **Structured sections**:
+  - Company Summary
+  - Why This Company
+  - Product Pillars
+  - Customer Profiles
+  - Interview Questions
+  - Tailored STAR Stories
+  - Questions For Them
+  - Prep Checklist
 
-![Dashboard Example](./app/images/Screenshot%202025-11-11%20at%2010.59.32%20AM.png)
+### ⭐ STAR Stories Builder
+- **Create and edit** STAR stories with full Situation-Task-Action-Result format
+- **Tagging system** - Organize stories by industry, category, and theme
+- **Grid and list views** - Toggle between viewing modes
+- **Quick copy** - Copy story summaries for easy pasting into prep docs
+- **Attach to jobs** - Link relevant stories to specific company prep documents
 
-![Analytics Example](./app/images/Screenshot%202025-11-11%20at%2010.59.45%20AM.png)
+### 📈 Analytics Dashboard
+- **Pipeline metrics** - Track applications, responses, interviews, and offers
+- **Visual charts** - Weekly pipeline trends, status breakdown, and conversion rates
+- **Timeline velocity** - See how long each stage takes
+- **Upcoming actions** - Never miss a follow-up
 
-![Component Library](./app/images/Screenshot%202025-11-11%20at%2010.59.52%20AM.png)
+### 🎯 Master Prep Library
+- **Personal narrative** - Your elevator pitch and background
+- **Question banks** - Common interview questions and your prepared answers
+- **STAR story shelf** - Quick access to all your stories
+- **Reusable content** - Pull content into company-specific prep docs
 
-## Quick Start
+### 🏠 Home Dashboard
+- **Quick metrics** - Applications, response rate, active interviews, follow-ups due
+- **Recent applications** - See your latest job applications at a glance
+- **Upcoming actions** - Timeline of tasks and follow-ups
+- **Quick links** - Fast access to all major sections
 
-### 1. Install Dependencies
+## Tech Stack
 
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Full type safety
+- **Tailwind CSS** - Utility-first styling
+- **Chart.js** - Data visualization
+- **Lucide React** - Icon library
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Connor-Tluck/Job_Tracker.git
+cd Job_Tracker
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-### 2. Environment Setup
-
-Copy the environment template file:
-
-```bash
-cp env.template .env.local
-```
-
-Edit `.env.local` and configure:
-
-- **For frontend-only mode**: Leave `NEXT_PUBLIC_ENABLE_AUTH=false` (or don't set Supabase variables)
-- **For full functionality**: Add your Supabase credentials
-
-### 3. Run Development Server
-
+3. Run the development server:
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Project Structure
 
 ```
-├── app/                    # Next.js App Router pages
-│   ├── examples/           # Example pages showing different layouts
-│   ├── components/         # Component library showcase
-│   └── auth/              # Authentication routes
-├── components/            # Reusable UI components
-│   ├── layout/            # Layout components (Sidebar, Header, etc.)
-│   ├── ui/                # UI primitives (Button, Card, Table, etc.)
-│   └── auth/              # Authentication components
-├── lib/                   # Utility functions and configurations
-│   ├── supabase/          # Supabase client setup
-│   └── utils.ts           # Helper functions
-├── supabase/              # Database schema
-│   └── schema.sql         # SQL schema for Supabase
-└── public/                # Static assets
+├── app/
+│   ├── page.tsx              # Home dashboard
+│   ├── jobs/                  # Job tracker pages
+│   │   ├── page.tsx          # Jobs table view
+│   │   └── [jobId]/          # Individual job detail
+│   ├── prep/                  # Prep document pages
+│   │   ├── page.tsx          # Master prep library
+│   │   └── companies/        # Company prep docs
+│   ├── star-stories/          # STAR stories builder
+│   └── analytics/             # Analytics dashboard
+├── components/
+│   ├── jobs/                  # Job-related components
+│   │   ├── CSVImportModal.tsx
+│   │   ├── EditableJobRow.tsx
+│   │   └── JobStatusBadge.tsx
+│   ├── prep/                  # Prep document components
+│   │   └── PrepDocModal.tsx
+│   ├── star-stories/          # STAR story components
+│   │   └── StarStoryModal.tsx
+│   ├── analytics/             # Analytics components
+│   │   └── AnalyticsPanel.tsx
+│   └── layout/                # Layout components
+│       ├── Sidebar.tsx
+│       ├── Header.tsx
+│       └── MainLayout.tsx
+├── lib/
+│   └── mock-data.ts          # Data models and mock data
+└── components/ui/            # Reusable UI components
 ```
 
-## Supabase Setup
+## Usage
 
-### 1. Create a Supabase Project
+### Adding Jobs
 
-1. Go to [supabase.com](https://supabase.com)
-2. Create a new project
-3. Get your project URL and anon key from Settings > API
+1. **Manual Entry**: Click "Import CSV" to upload a CSV file with your job applications
+2. **CSV Format**: Include columns like Company, Job Title, Application Date, Contact Name, etc.
+3. **Inline Editing**: Click the edit icon on any cell to modify job information
 
-### 2. Run the SQL Schema
+### Creating Company Prep Docs
 
-1. In your Supabase dashboard, go to SQL Editor
-2. Copy and paste the contents of `supabase/schema.sql`
-3. Run the SQL to create tables and policies
+1. Navigate to "Company Prep" in the sidebar
+2. Click "New Prep Doc"
+3. Fill in company information, product pillars, interview questions, etc.
+4. Use the sidebar navigation to quickly jump between sections during interviews
 
-### 3. Configure Authentication (Optional)
+### Building STAR Stories
 
-If you want to enable Google OAuth:
+1. Go to "STAR Stories" in the sidebar
+2. Click "New Story"
+3. Fill in Situation, Task, Action, and Result
+4. Add tags and industries for easy filtering
+5. Attach stories to specific company prep docs
 
-1. In Supabase dashboard, go to Authentication > Providers
-2. Enable Google provider
-3. Add your Google OAuth credentials
-4. Set `NEXT_PUBLIC_ENABLE_AUTH=true` in your `.env.local`
+### Tracking Analytics
 
-## Component Library
+- View your pipeline metrics on the Analytics page
+- See weekly trends and conversion rates
+- Track upcoming actions and follow-ups
 
-Visit `/components` to see all available UI components:
+## Features in Detail
 
-- **Buttons** - Multiple variants and sizes
-- **Dropdowns** - Context menus with icons
-- **Cards** - Container components with hover effects
-- **Tables** - Data tables with sorting and actions
-- **Pagination** - Page navigation component
+### CSV Import
+- Flexible column mapping (automatically detects common column names)
+- Preview before importing
+- Supports multiple job entries at once
 
-## Example Pages
+### Inline Editing
+- Hover over any cell to see the edit icon
+- Click to edit directly in place
+- Press Enter to save, Escape to cancel
+- Dropdown menus for status and response fields
 
-Browse different layout patterns at `/examples`:
-
-- **Dashboard** - Metrics and overview cards
-- **Chat Interface** - Real-time messaging UI
-- **User Management** - CRUD operations with tables
-- **Task Tracking** - Kanban-style task management
-- **Mapping App** - Geographic interface layout
-- **Media Gallery** - Grid-based media browser
-- **Analytics** - Data visualization layouts
-- **Documents** - File management interface
-- **Storage** - File storage with details panel
-- **Settings** - Configuration forms
-- **Performance** - Monitoring dashboards
-- **Evaluation** - Testing interfaces
-- **Configuration** - System config management
-
-## Customization
-
-### Styling
-
-The theme is configured in `tailwind.config.ts`. Key color variables:
-
-- `background` - Main background colors
-- `foreground` - Text colors
-- `primary` - Primary brand color
-- `accent` - Accent color
-- `border` - Border colors
-
-### Adding New Pages
-
-1. Create a new file in `app/your-page/page.tsx`
-2. Add a navigation item in `components/layout/Sidebar.tsx`
-3. Use the existing components from `components/ui/`
-
-### Adding New Components
-
-1. Create component in `components/ui/YourComponent.tsx`
-2. Export from the component file
-3. Add examples to `app/components/page.tsx` for testing
-
-## Database Schema
-
-The template includes example tables:
-
-- **profiles** - User profile information
-- **tasks** - Task management with priorities
-- **documents** - File metadata storage
-
-All tables include:
-- Row Level Security (RLS) policies
-- Automatic `created_at` and `updated_at` timestamps
-- User-scoped data access
-
-## Authentication
-
-Authentication is **optional** and can be enabled/disabled via environment variables:
-
-- Set `NEXT_PUBLIC_ENABLE_AUTH=true` to enable
-- Set `NEXT_PUBLIC_ENABLE_AUTH=false` or leave unset to disable
-
-When disabled, the app runs in frontend-only mode, perfect for UI development.
+### Company Prep Documents
+- Clean, document-style layout optimized for quick reference
+- Sidebar navigation for fast section jumping
+- Inline editing for each section
+- Numbered lists for easy scanning during interviews
 
 ## Development
 
@@ -183,24 +189,23 @@ npm start
 npm run lint
 ```
 
-## Tech Stack
+## Future Enhancements
 
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Utility-first CSS
-- **Supabase** - Backend as a service
-- **Lucide React** - Icon library
-- **Chart.js** - Data visualization library
+- Google Sheets integration for automatic syncing
+- Google Drive integration for document linking
+- Database persistence (currently uses local state)
+- Export prep documents to PDF
+- Email reminders for follow-ups
+- Mobile app version
 
 ## License
 
-This template is free to use for personal and commercial projects.
+This project is free to use for personal and commercial purposes.
 
-## Support
+## Contributing
 
-For issues, questions, or contributions, please open an issue on the repository.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-Built for rapid application development
-
+Built to help you stay organized and prepared throughout your job search journey.
