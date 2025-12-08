@@ -43,6 +43,34 @@ We suggest starting with the Assignment Docs page as your primary guide during t
 
 **IMPORTANT: Follow these steps carefully to ensure the application runs correctly. This guide assumes you have basic familiarity with Node.js, npm, and command-line tools.**
 
+### Quick Setup Summary (For Reviewers)
+
+If you're a reviewer setting up the project, here are the essential commands to recreate all LaunchDarkly components:
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Set up environment variables (see Step 4 for details)
+cp env.template .env.local
+# Edit .env.local with your LaunchDarkly and OpenAI credentials
+
+# 3. Install and authenticate LaunchDarkly CLI
+brew install launchdarkly/tap/ldcli  # macOS
+ldcli login
+
+# 4. Import all 30 feature flags
+npm run ld:import -- --project YOUR_PROJECT_KEY --environment production
+
+# 5. Set up targeting rules for show-premium-feature-demo flag
+npm run ld:setup-targeting -- --project YOUR_PROJECT_KEY --environment production
+
+# 6. Start the development server
+npm run dev
+```
+
+**Note:** Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key (e.g., `default`).
+
 ### Environment Assumptions
 
 Before starting, ensure your environment meets these requirements:
@@ -143,11 +171,23 @@ npm install
    - Ensure there are no extra spaces or quotes around the values
    - File should be in the project root directory (same level as `package.json`)
 
-#### Step 5: Import LaunchDarkly Feature Flags
+#### Step 5: Set Up LaunchDarkly Project Components
 
-The application requires **30 feature flags** to be created in your LaunchDarkly project. You have two options:
+**⚠️ IMPORTANT FOR REVIEWERS:** This step recreates all LaunchDarkly components (flags and targeting rules) in your LaunchDarkly workspace. This is **critical** - without completing this step, the application will not function correctly as many features depend on specific flag configurations and targeting rules.
 
-**Option A: Using LaunchDarkly CLI (Recommended - Fastest Method)**
+**What gets created:**
+- 30 feature flags (all application flags)
+- Targeting rules for `show-premium-feature-demo` flag (individual targeting + rule-based targeting)
+- Default flag states
+
+**Time required:** Approximately 2-5 minutes depending on your connection speed.
+
+**Prerequisites:**
+- LaunchDarkly CLI installed (see instructions below)
+- LaunchDarkly account with project created
+- CLI authenticated (see instructions below)
+
+**5A: Install and Authenticate LaunchDarkly CLI**
 
 1. **Install LaunchDarkly CLI:**
    ```bash
@@ -163,17 +203,22 @@ The application requires **30 feature flags** to be created in your LaunchDarkly
    ```
    - This will open your browser to authenticate
    - Follow the prompts to authorize the CLI
+   - **Note:** You need Writer or Admin permissions in LaunchDarkly to create flags and targeting rules
 
-3. **Import all flags:**
-   ```bash
-   npm run ld:import -- --project YOUR_PROJECT_KEY
-   ```
-   - Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key
-   - Example: `npm run ld:import -- --project default`
-   - This imports all 30 flags from `launchdarkly/flags.json`
+**5B: Import All Feature Flags**
 
-**Option B: Manual Creation (Alternative Method)**
+The application requires **30 feature flags** to be created in your LaunchDarkly project.
 
+**Using CLI (Recommended):**
+```bash
+npm run ld:import -- --project YOUR_PROJECT_KEY --environment production
+```
+- Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key
+- Example: `npm run ld:import -- --project default --environment production`
+- This imports all 30 flags from `launchdarkly/flags.json`
+- The script will create flags with a 1-second delay between each to avoid rate limiting
+
+**Manual Creation (Alternative):**
 If you prefer to create flags manually or CLI installation fails:
 
 1. **Open `launchdarkly/flags.json`** in a text editor
@@ -183,6 +228,7 @@ If you prefer to create flags manually or CLI installation fails:
    - Set the flag name to the `name` value
    - Set description to the `description` value
    - Set default value to `true` (ON)
+   - Enable "SDKs using Client-side ID" (for client-side availability)
    - Save the flag
 3. **Repeat for all 30 flags** listed in the JSON file
 
@@ -190,6 +236,43 @@ If you prefer to create flags manually or CLI installation fails:
 - Go to LaunchDarkly dashboard → Feature Flags
 - You should see 30 flags created
 - All flags should default to `true` (ON)
+
+**5C: Set Up Targeting Rules**
+
+The `show-premium-feature-demo` flag requires specific targeting rules to demonstrate user-based targeting. Run this script to configure them:
+
+```bash
+npm run ld:setup-targeting -- --project YOUR_PROJECT_KEY --environment production
+```
+
+**What this script configures:**
+- **Individual Targeting:**
+  - `user-001` (Beta Tester) → Flag ON
+  - `user-002` (Premium User) → Flag ON
+- **Rule-Based Targeting:**
+  - `subscriptionTier = "premium"` → Flag ON
+  - `betaTester = true` → Flag ON
+  - `role = "beta-tester"` → Flag ON
+- **Default:** Flag OFF (for all other users)
+
+**Manual Configuration (If Script Fails):**
+If the CLI script fails to set up targeting rules, configure them manually in LaunchDarkly dashboard:
+
+1. Navigate to: **Feature Flags → `show-premium-feature-demo` → Targeting**
+2. **Set Default Rule:** Set to "Serve Off" (variation 1)
+3. **Add Individual Targeting:**
+   - Add `user-001` → Serve "On" (variation 0)
+   - Add `user-002` → Serve "On" (variation 0)
+4. **Add Rule-Based Targeting (in order):**
+   - Rule 1: `subscriptionTier` is in `["premium"]` → Serve "On"
+   - Rule 2: `betaTester` is in `[true]` → Serve "On"
+   - Rule 3: `role` is in `["beta-tester"]` → Serve "On"
+
+**Verification:** After setting up targeting:
+- Go to LaunchDarkly dashboard → Feature Flags → `show-premium-feature-demo` → Targeting
+- Verify individual targeting shows `user-001` and `user-002` both set to "On"
+- Verify three rule-based targeting rules are configured
+- Verify default is set to "Off"
 
 #### Step 6: Set Up OpenAI API Key (For Chatbot Feature)
 
@@ -256,8 +339,14 @@ After installation, verify everything is working:
 
 - [ ] **Application loads** at `http://localhost:3000` without errors
 - [ ] **LaunchDarkly client connects** (check browser console for connection messages)
+- [ ] **All 30 feature flags created** - Go to LaunchDarkly dashboard → Feature Flags, verify 30 flags exist
+- [ ] **Targeting rules configured** - Go to LaunchDarkly dashboard → Feature Flags → `show-premium-feature-demo` → Targeting:
+  - [ ] Individual targeting: `user-001` and `user-002` both set to "On"
+  - [ ] Rule-based targeting: 3 rules configured (subscriptionTier, betaTester, role)
+  - [ ] Default rule: Set to "Off"
 - [ ] **Feature flags are accessible** - Visit `/admin` to see flag status dashboard
 - [ ] **User context switcher works** - Visit `/admin` and switch between users (Beta Tester, Premium User, Free User)
+- [ ] **Targeting demo works** - On `/admin` page, switch to Beta Tester and verify `show-premium-feature-demo` shows "FLAG ON"
 - [ ] **Flags control UI** - Toggle flags in LaunchDarkly dashboard and see instant changes
 - [ ] **Chatbot works** (if OpenAI key is set) - Visit `/landing/support-bot` and send a message
 - [ ] **No console errors** - Browser console should be free of critical errors
@@ -288,6 +377,26 @@ After installation, verify everything is working:
 - **Solution:** Run `npm install` again
 - Delete `node_modules` and `package-lock.json`, then `npm install`
 - Ensure you're in the project root directory
+
+**Issue: "Targeting rules not working" or "show-premium-feature-demo flag always OFF"**
+- **Solution:** Verify targeting rules are configured:
+  1. Go to LaunchDarkly dashboard → Feature Flags → `show-premium-feature-demo` → Targeting
+  2. Check that individual targeting includes `user-001` and `user-002` set to "On"
+  3. Verify rule-based targeting has 3 rules configured
+  4. Ensure default is set to "Off"
+  5. If rules are missing, run: `npm run ld:setup-targeting -- --project YOUR_PROJECT_KEY --environment production`
+  6. If CLI script fails, configure targeting manually in LaunchDarkly dashboard (see Step 5C for instructions)
+
+**Issue: "ldcli command not found"**
+- **Solution:** Install LaunchDarkly CLI:
+  - macOS: `brew install launchdarkly/tap/ldcli`
+  - Linux/Windows: Download from https://github.com/launchdarkly/ldcli/releases
+  - Verify installation: `ldcli --version`
+
+**Issue: "Permission denied" when running ldcli commands**
+- **Solution:** Ensure your LaunchDarkly account has Writer or Admin permissions
+- Check your access token permissions in LaunchDarkly → Account Settings → Authorization
+- Re-authenticate: `ldcli login`
 
 ### Next Steps After Installation
 
