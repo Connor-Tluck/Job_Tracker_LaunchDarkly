@@ -41,6 +41,7 @@ Start with the Assignment Docs page as your primary guide during the review proc
 
 ## Installation
 
+**IMPORTANT: Follow these steps carefully to ensure the application runs correctly. This guide assumes you have basic familiarity with Node.js, npm, and command-line tools.**
 
 ### Quick Setup Summary (For Reviewers)
 
@@ -70,230 +71,248 @@ npm run dev
 
 **Note:** Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key (e.g., `default`).
 
-### Prerequisites
+### Environment Assumptions
 
-- Node.js 18+ and npm 8+
-- LaunchDarkly account with Writer/Admin permissions
-- OpenAI API key (for chatbot feature)
+Before starting, ensure your environment meets these requirements:
+
+- **Node.js**: Version 18.0.0 or higher (check with `node --version`)
+- **npm**: Version 8.0.0 or higher (check with `npm --version`)
+- **Operating System**: macOS, Linux, or Windows (with WSL recommended for Windows)
+- **Browser**: Modern browser with JavaScript enabled (Chrome, Firefox, Safari, or Edge)
+- **LaunchDarkly Account**: A LaunchDarkly account with access to create projects and feature flags
+  - Sign up for a free trial at [launchdarkly.com/start-trial](https://launchdarkly.com/start-trial/) if needed
+  - The application uses LaunchDarkly's **Production** environment by default
+- **OpenAI Account**: An OpenAI account with API access (required for chatbot functionality)
+  - Sign up at [platform.openai.com](https://platform.openai.com) if needed
+  - You'll need API credits/billing set up to use the chatbot feature
 
 ### Step-by-Step Installation
 
-#### Step 1: Clone and Install
+#### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/Connor-Tluck/Job_Tracker_LaunchDarkly.git
 cd Job_Tracker_LaunchDarkly
+```
+
+**Verification:** You should see the project files including `package.json`, `README.md`, and `env.template`.
+
+#### Step 2: Install Dependencies
+
+```bash
 npm install
 ```
 
-#### Step 2: Get LaunchDarkly Credentials
+**What this does:** Installs all required Node.js packages including Next.js, LaunchDarkly SDKs, React, and other dependencies.
 
-1. Create/access LaunchDarkly account and project
-2. Get **Client-side ID** from Account Settings → Authorization
-3. Get **SDK Key** from Project Settings → Environments → Production
-4. Note your **project key** (needed for flag import)
+**Expected output:** Should complete without errors. Installation may take 1-2 minutes.
 
-#### Step 3: Set Up Environment Variables
 
-```bash
-cp env.template .env.local
-```
+#### Step 3: Set Up LaunchDarkly Account and Project
 
-Edit `.env.local` and replace placeholder values with your credentials:
-- `NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID` - Client-side ID from LaunchDarkly
-- `LAUNCHDARKLY_SDK_KEY` - Server SDK Key from LaunchDarkly Production environment
-- `OPENAI_API_KEY` - OpenAI API key (required for chatbot)
+1. **Create or Access LaunchDarkly Account:**
+   - Go to [app.launchdarkly.com](https://app.launchdarkly.com) and sign in
+   - If you don't have an account, sign up at [launchdarkly.com/start-trial](https://launchdarkly.com/start-trial/)
 
-#### Step 4: Set Up LaunchDarkly Components
+2. **Create a New Project (or use existing):**
+   - Navigate to Project Settings: [app.launchdarkly.com/settings/projects](https://app.launchdarkly.com/settings/projects)
+   - Click "New Project" or select an existing project
+   - **Important:** Note your project key (you'll need this for flag import)
 
-**Install LaunchDarkly CLI:**
-```bash
-brew install launchdarkly/tap/ldcli  # macOS
-# Or download from: https://github.com/launchdarkly/ldcli/releases
-ldcli login
-```
+3. **Get Your LaunchDarkly Credentials:**
+   - Navigate to [Account Settings → Authorization](https://app.launchdarkly.com/settings/authorization)
+   - Find your **Client-side ID** (starts with `sdk-` or similar)
+   - Navigate to [Project Settings → Environments](https://app.launchdarkly.com/settings/projects)
+   - Select the **Production** environment
+   - Copy the **SDK Key** (this is your server-side key)
 
-**Import all 30 feature flags:**
+#### Step 4: Set Up Environment Variables
+
+1. **Create `.env.local` file:**
+   ```bash
+   cp env.template .env.local
+   ```
+
+2. **Open `.env.local` in a text editor** and replace the placeholder values:
+
+   ```bash
+   # LaunchDarkly Client-side ID (for React SDK)
+   # Get this from: Account Settings → Authorization
+   # Format: sdk-xxxxx or similar
+   NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID=your_launchdarkly_client_id_here
+
+   # LaunchDarkly Server SDK Key (for Node.js SDK)
+   # Get this from: Project Settings → Environments → Production → SDK Key
+   # Format: sdk-xxxxx-xxxxx-xxxxx
+   LAUNCHDARKLY_SDK_KEY=your_launchdarkly_sdk_key_here
+
+   # OpenAI API Key (required for chatbot functionality)
+   # Get this from: https://platform.openai.com/api-keys
+   # Format: sk-xxxxx...
+   OPENAI_API_KEY=your_openai_api_key_here
+
+   # Authentication (set to false for demo mode)
+   NEXT_PUBLIC_ENABLE_AUTH=false
+   ```
+
+   **Critical Notes:**
+   - **DO NOT** commit `.env.local` to git (it's already in `.gitignore`)
+   - Replace `your_launchdarkly_client_id_here` with your actual Client-side ID
+   - Replace `your_launchdarkly_sdk_key_here` with your actual Production SDK Key
+   - Replace `your_openai_api_key_here` with your actual OpenAI API key
+   - The `NEXT_PUBLIC_ENABLE_AUTH=false` setting enables demo mode (no authentication required)
+
+3. **Verify your `.env.local` file:**
+   - Ensure all three keys are set (no `your_xxx_here` placeholders remain)
+   - Ensure there are no extra spaces or quotes around the values
+   - File should be in the project root directory (same level as `package.json`)
+
+#### Step 5: Set Up LaunchDarkly Project Components
+
+**⚠️ IMPORTANT FOR REVIEWERS:** This step recreates all LaunchDarkly components (flags and targeting rules) in your LaunchDarkly workspace. This is **critical** - without completing this step, the application will not function correctly as many features depend on specific flag configurations and targeting rules.
+
+**What gets created:**
+- 30 feature flags (all application flags)
+- Targeting rules for `show-premium-feature-demo` flag (individual targeting + rule-based targeting)
+- Default flag states
+
+**Time required:** Approximately 2-5 minutes depending on your connection speed.
+
+**Prerequisites:**
+- LaunchDarkly CLI installed (see instructions below)
+- LaunchDarkly account with project created
+- CLI authenticated (see instructions below)
+
+**5A: Install and Authenticate LaunchDarkly CLI**
+
+1. **Install LaunchDarkly CLI:**
+   ```bash
+   # macOS (using Homebrew)
+   brew install launchdarkly/tap/ldcli
+   
+   # Linux/Windows - Download from: https://github.com/launchdarkly/ldcli/releases
+   ```
+
+2. **Authenticate CLI:**
+   ```bash
+   ldcli login
+   ```
+   - This will open your browser to authenticate
+   - Follow the prompts to authorize the CLI
+   - **Note:** You need Writer or Admin permissions in LaunchDarkly to create flags and targeting rules
+
+**5B: Import All Feature Flags**
+
+The application requires **30 feature flags** to be created in your LaunchDarkly project.
+
+**Using CLI (Recommended):**
 ```bash
 npm run ld:import -- --project YOUR_PROJECT_KEY --environment production
 ```
+- Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key
+- Example: `npm run ld:import -- --project default --environment production`
+- This imports all 30 flags from `launchdarkly/flags.json`
+- The script will create flags with a 1-second delay between each to avoid rate limiting
 
-**Set up targeting rules for `show-premium-feature-demo`:**
+**Manual Creation (Alternative):**
+If you prefer to create flags manually or CLI installation fails:
+
+1. **Open `launchdarkly/flags.json`** in a text editor
+2. **For each flag** in the file:
+   - Go to LaunchDarkly dashboard → Feature Flags → Create Flag
+   - Use the `key` value as the flag key
+   - Set the flag name to the `name` value
+   - Set description to the `description` value
+   - Set default value to `true` (ON)
+   - Enable "SDKs using Client-side ID" (for client-side availability)
+   - Save the flag
+3. **Repeat for all 30 flags** listed in the JSON file
+
+**Verification:** After importing flags:
+- Go to LaunchDarkly dashboard → Feature Flags
+- You should see 30 flags created
+- All flags should default to `true` (ON)
+
+**5C: Set Up Targeting Rules**
+
+The `show-premium-feature-demo` flag requires specific targeting rules to demonstrate user-based targeting. Run this script to configure them:
+
 ```bash
 npm run ld:setup-targeting -- --project YOUR_PROJECT_KEY --environment production
 ```
 
-This configures:
-- Individual targeting: `user-001` and `user-002` → ON
-- Rule-based targeting: `subscriptionTier = "premium"`, `betaTester = true`, `role = "beta-tester"` → ON
-- Default: OFF
+**What this script configures:**
+- **Individual Targeting:**
+  - `user-001` (Beta Tester) → Flag ON
+  - `user-002` (Premium User) → Flag ON
+- **Rule-Based Targeting:**
+  - `subscriptionTier = "premium"` → Flag ON
+  - `betaTester = true` → Flag ON
+  - `role = "beta-tester"` → Flag ON
+- **Default:** Flag OFF (for all other users)
 
-If CLI fails, configure manually in LaunchDarkly dashboard: Feature Flags → `show-premium-feature-demo` → Targeting
+**Manual Configuration (If Script Fails):**
+If the CLI script fails to set up targeting rules, configure them manually in LaunchDarkly dashboard:
 
-#### Step 5: Set Up AI Configs (Manual - Required for Chatbot)
+1. Navigate to: **Feature Flags → `show-premium-feature-demo` → Targeting**
+2. **Set Default Rule:** Set to "Serve Off" (variation 1)
+3. **Add Individual Targeting:**
+   - Add `user-001` → Serve "On" (variation 0)
+   - Add `user-002` → Serve "On" (variation 0)
+4. **Add Rule-Based Targeting (in order):**
+   - Rule 1: `subscriptionTier` is in `["premium"]` → Serve "On"
+   - Rule 2: `betaTester` is in `[true]` → Serve "On"
+   - Rule 3: `role` is in `["beta-tester"]` → Serve "On"
 
-**⚠️ IMPORTANT:** AI Configs cannot be automated via CLI and must be configured manually in the LaunchDarkly dashboard. **The chatbot will not work without this setup.**
+**Verification:** After setting up targeting:
+- Go to LaunchDarkly dashboard → Feature Flags → `show-premium-feature-demo` → Targeting
+- Verify individual targeting shows `user-001` and `user-002` both set to "On"
+- Verify three rule-based targeting rules are configured
+- Verify default is set to "Off"
 
-1. Navigate to LaunchDarkly dashboard → **AI Configs** → **Create AI Config**
-2. **AI Config Key:** `jobs-os-basic-chatbot`
-3. **Create two variations:**
-   - **Variation 1:** `standard_open_ai` (default)
-     - System prompt: Friendly, helpful customer support bot (see `app/api/chat/route.ts` for fallback prompt)
-     - Model: `gpt-4o-mini` (or your preferred model)
-     - Temperature: `0.7`
-     - Max tokens: `1000`
-   - **Variation 2:** `combative_open_ai`
-     - System prompt: Grumpy, sarcastic tone (e.g., "Oh great, another question...")
-     - Model: `gpt-4o-mini`
-     - Temperature: `0.9`
-     - Max tokens: `1000`
-4. **Configure targeting:**
-   - Set default variation to `standard_open_ai`
-   - Add individual targeting: `user-001` (Beta Tester) → `combative_open_ai`
+#### Step 6: Set Up OpenAI API Key (For Chatbot Feature)
 
-**Note:** Without AI Configs, the chatbot will use a fallback prompt but won't demonstrate LaunchDarkly AI Configs functionality. See `feature_walkthrough.md` or `/admin/examples` for detailed setup instructions with screenshots.
+1. **Create OpenAI Account:**
+   - Go to [platform.openai.com](https://platform.openai.com)
+   - Sign up or sign in
 
-#### Step 6: Run the Application
+2. **Get API Key:**
+   - Navigate to [API Keys](https://platform.openai.com/api-keys)
+   - Click "Create new secret key"
+   - Copy the key immediately (you won't be able to see it again)
+   - **Important:** Ensure billing is set up if required
+
+3. **Add to `.env.local`:**
+   - Already done in Step 4, but verify the key is correct
+   - Format should be: `sk-xxxxx...`
+
+**Note:** The chatbot uses LaunchDarkly AI Configs for prompt and model management, but still requires your OpenAI API key for actual API calls. Without this key, the chatbot will not function.
+
+#### Step 7: Run the Development Server
 
 ```bash
 npm run dev
 ```
 
-Open `http://localhost:3000` in your browser. Visit `/admin` to verify flags are working.
-
----
-
-## Overview
-
-This application was built by converting an existing job tracker project to use LaunchDarkly's feature flag ecosystem. Using LaunchDarkly's SDK and CLI tools, the project integrates **30 feature flags** that control page access, component visibility, and feature toggles throughout the application.
-
-### What Was Built
-
-- **30 Feature Flags**: Comprehensive flag coverage across pages, components, and features
-- **Real-time Flag Updates**: Instant UI changes without page reloads via LaunchDarkly streaming
-- **Targeting System**: Individual and rule-based targeting with multiple user contexts
-- **Experimentation**: Full experiment setup with metrics tracking and statistical analysis
-- **AI Configs Integration**: Dynamic LLM model and prompt management via LaunchDarkly
-- **Webhook Integrations**: Slack integration for experiment lifecycle tracking
-
-### Key Technical Achievements
-
-- Converted existing application to LaunchDarkly format using React Client SDK and Node.js Server SDK
-- Implemented comprehensive user context system with 9+ attributes for targeting
-- Created production-safe access control with 404 fallbacks when flags are OFF
-- Built admin dashboard for real-time flag monitoring and user context switching
-- Integrated LaunchDarkly AI Configs for dynamic chatbot prompt and model management
-
----
-
-## Application Structure
-
-The application consists of two main parts:
-
-**Core Application** (`/`, `/jobs`, `/prep`, `/analytics`, `/star-stories`)
-- Job tracking, company prep documents, STAR stories, analytics dashboard
-
-**Marketing Pages** (`/landing/*`)
-- Marketing pages and support bot (flag-controlled)
-
-**Admin** (`/admin`, `/admin/assignment-satisfaction`, `/admin/examples`)
-- Flag monitoring, user context switching, documentation
-
----
-
-
----
-
-## Environments
-
-The application uses LaunchDarkly's **Production** environment by default. Both `NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID` (React Client SDK) and `LAUNCHDARKLY_SDK_KEY` (Node.js Server SDK) are required in `.env.local`.
-
----
-
-## Demo Users
-
-Three demo user profiles are available for testing targeting:
-
-- **Beta Tester** (`user-001`) - `beta-tester` role, `premium` tier, `betaTester: true`
-- **Premium User** (`user-002`) - `user` role, `premium` tier, `betaTester: false`
-- **Free User** (`user-003`) - `user` role, `free` tier, `betaTester: false`
-
-Switch users via `/admin` → User Context Switcher. User context attributes: `key`, `email`, `name`, `role`, `subscriptionTier`, `signupDate`, `betaTester`, `companySize`, `industry`.
-
----
-
-## Admin Control Panel
-
-The Admin Control Panel (`/admin`) provides:
-- Real-time view of all 30 feature flags
-- User context switcher for testing targeting
-- Targeting demo card showing flag-controlled features
-- Chat test interface for AI Config variations
-
----
-
-## Assignment Docs
-
-The Assignment Docs page (`/admin/assignment-satisfaction`) documents how the application satisfies LaunchDarkly technical exercise requirements, including Release & Remediate, Targeting, Experimentation, AI Configs, and Integrations.
-
----
-
-## Tech Stack
-
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Full type safety
-- **Tailwind CSS** - Utility-first styling
-- **LaunchDarkly React Client SDK** - Client-side feature flags
-- **LaunchDarkly Node.js Server SDK** - Server-side feature flags and AI Configs
-- **LaunchDarkly AI Configs** - Dynamic LLM model and prompt management (chatbot functionality)
-- **Chart.js** - Data visualization
-- **Lucide React** - Icon library
-
----
-
-## Development
-
-```bash
-# Development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Lint code
-npm run lint
-
-# LaunchDarkly CLI commands
-npm run ld:convert    # Convert flags for CLI format
-npm run ld:import     # Import flags via CLI
-npm run ld:turn-on    # Turn on all flags
+**Expected output:**
+```
+  ▲ Next.js 14.x.x
+  - Local:        http://localhost:3000
+  - Ready in X seconds
 ```
 
----
-
-## Documentation
-
-All documentation is now integrated into the application itself:
-
-- **Assignment Docs Page** (`/admin/assignment-satisfaction`) - Complete assignment requirements documentation and implementation guide
-- **Admin README Page** (`/admin/readme`) - Implementation walkthrough and testing guide
+**What to expect:**
+- Server starts on port 3000
+- Application available at `http://localhost:3000`
 
 ---
 
-## Key Strengths
+## Next Steps
 
-- **30 Feature Flags** covering pages, components, and features
-- **Real-time Updates** - Instant flag changes without page reloads
-- **Production-Safe** - All pages protected with 404 when flags are OFF
-- **Comprehensive Targeting** - Individual and rule-based targeting
-- **Full Experimentation** - Metrics, experiments, and statistical analysis
-- **AI Configs Integration** - Dynamic LLM management via LaunchDarkly
-- **Developer Experience** - TypeScript constants, custom hooks, organized structure
-- **Remediation Ready** - Multiple methods for instant rollback
+1. **Review Assignment Docs:** Navigate to `/admin/assignment-satisfaction` for detailed requirements documentation
+2. **Explore Admin Panel:** Visit `/admin` to see all flags and test user switching
+3. **Review Project Details:** See `PROJECT_DETAILS.md` for comprehensive project information
 
 ---
 
-Built to demonstrate comprehensive LaunchDarkly integration capabilities for feature flag management, targeting, experimentation, and AI Config management.
+For detailed project information, architecture, and technical details, see [PROJECT_DETAILS.md](./PROJECT_DETAILS.md).
