@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getLDServerClient, convertToLDContext } from '@/lib/launchdarkly/serverClient';
 
-// Comprehensive system prompt with Job Search OS context
-const SYSTEM_PROMPT = `You are a helpful and friendly customer support bot for Job Search OS, a comprehensive job search management platform. Your role is to assist users with questions about features, pricing, getting started, troubleshooting, and best practices.
+// Fallback system prompt (used if LaunchDarkly is unavailable)
+const FALLBACK_SYSTEM_PROMPT = `You are a helpful and friendly customer support bot for Job Search OS, a comprehensive job search management platform. Your role is to assist users with questions about features, pricing, getting started, troubleshooting, and best practices.
 
 ## About Job Search OS
 
@@ -115,7 +116,7 @@ Remember: Job searching is stressful enough. Job Search OS eliminates the chaos 
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages } = await request.json();
+    const { messages, userContext } = await request.json();
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
@@ -132,29 +133,139 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize OpenAI client after verifying API key exists
+    // Initialize OpenAI client
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // Prepare messages for OpenAI (add system prompt)
-    const openaiMessages = [
-      {
-        role: 'system' as const,
-        content: SYSTEM_PROMPT,
-      },
-      ...messages.map((msg: { role: string; content: string }) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      })),
-    ];
+    // Get LaunchDarkly server client
+    const ldClient = await getLDServerClient();
+    
+    let model = 'gpt-4o-mini';
+    let temperature = 0.7;
+    let maxTokens = 1000;
+    let systemPrompt = FALLBACK_SYSTEM_PROMPT;
+    let openaiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+
+    // Try to get AI Config from LaunchDarkly
+    if (ldClient && userContext) {
+      try {
+        const ldContext = convertToLDContext(userContext);
+        
+        // Get AI Config variation
+        // Replace 'jobs-os-basic-chatbot' with your actual AI Config key from LaunchDarkly
+        // AI Configs are accessed via the variation method and return a structured config object
+        const aiConfig = await ldClient.variation('jobs-os-basic-chatbot', ldContext, null);
+        
+        if (aiConfig && typeof aiConfig === 'object') {
+          // AI Config returned as an object
+          // Extract model information
+          if (aiConfig.model) {
+            // Model can be a string (model ID) or an object with id and parameters
+            if (typeof aiConfig.model === 'string') {
+              model = aiConfig.model;
+            } else if (aiConfig.model.id) {
+              model = aiConfig.model.id;
+            }
+            
+            // Extract model parameters if available
+            if (aiConfig.model.parameters) {
+              temperature = aiConfig.model.parameters.temperature ?? temperature;
+              maxTokens = aiConfig.model.parameters.max_tokens ?? maxTokens;
+            }
+          }
+          
+          // Extract messages from AI Config (includes system prompt)
+          if (aiConfig.messages && Array.isArray(aiConfig.messages)) {
+            // Convert AI Config messages to OpenAI format
+            openaiMessages = aiConfig.messages.map((msg: any) => ({
+              role: msg.role as 'system' | 'user' | 'assistant',
+              content: msg.content || '',
+            }));
+            
+            // Add user messages from the request
+            const userMessages = messages.map((msg: { role: string; content: string }) => ({
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content,
+            }));
+            
+            // Combine AI Config messages (system prompt) with conversation messages
+            openaiMessages = [...openaiMessages, ...userMessages];
+          } else if (aiConfig.systemPrompt || aiConfig.prompt) {
+            // Fallback: use system prompt from AI Config if available
+            systemPrompt = aiConfig.systemPrompt || aiConfig.prompt || FALLBACK_SYSTEM_PROMPT;
+            
+            // Build messages array with system prompt and user messages
+            openaiMessages = [
+              {
+                role: 'system' as const,
+                content: systemPrompt,
+              },
+              ...messages.map((msg: { role: string; content: string }) => ({
+                role: msg.role as 'user' | 'assistant',
+                content: msg.content,
+              })),
+            ];
+          } else {
+            // AI Config structure not recognized, use fallback
+            openaiMessages = [
+              {
+                role: 'system' as const,
+                content: systemPrompt,
+              },
+              ...messages.map((msg: { role: string; content: string }) => ({
+                role: msg.role as 'user' | 'assistant',
+                content: msg.content,
+              })),
+            ];
+          }
+        } else {
+          // AI Config not available or null, use fallback
+          openaiMessages = [
+            {
+              role: 'system' as const,
+              content: systemPrompt,
+            },
+            ...messages.map((msg: { role: string; content: string }) => ({
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content,
+            })),
+          ];
+        }
+      } catch (aiConfigError) {
+        console.error('Error getting AI Config from LaunchDarkly:', aiConfigError);
+        // Fallback to default behavior
+        openaiMessages = [
+          {
+            role: 'system' as const,
+            content: systemPrompt,
+          },
+          ...messages.map((msg: { role: string; content: string }) => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+          })),
+        ];
+      }
+    } else {
+      // LaunchDarkly not available, use fallback
+      openaiMessages = [
+        {
+          role: 'system' as const,
+          content: systemPrompt,
+        },
+        ...messages.map((msg: { role: string; content: string }) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        })),
+      ];
+    }
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: model,
       messages: openaiMessages,
-      temperature: 0.7,
-      max_tokens: 1000,
+      temperature: temperature,
+      max_tokens: maxTokens,
     });
 
     const assistantMessage = completion.choices[0]?.message?.content;

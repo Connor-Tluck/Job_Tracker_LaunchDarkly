@@ -17,10 +17,14 @@ import {
   Settings,
   FileText,
   Briefcase,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useFlags } from "launchdarkly-react-client-sdk";
+import { useState, useEffect, useRef } from "react";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 interface NavItem {
   name: string;
@@ -62,17 +66,85 @@ const navigation: NavSection[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const flags = useFlags();
+  const flagsReady = useFlagsReady();
 
-  // Feature flags for navigation items
-  const showDashboard = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_PAGE, true);
-  const showAnalytics = useFeatureFlag(FLAG_KEYS.SHOW_ANALYTICS_PAGE, true);
-  const showPrep = useFeatureFlag(FLAG_KEYS.SHOW_PREP_PAGE, true);
-  const showCompanyPrep = useFeatureFlag(FLAG_KEYS.SHOW_COMPANY_PREP_PAGE, true);
-  const showStarStories = useFeatureFlag(FLAG_KEYS.SHOW_STAR_STORIES_PAGE, true);
-  const showJobs = useFeatureFlag(FLAG_KEYS.SHOW_JOBS_PAGE, true);
-  const enableTimelineView = useFeatureFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, true);
-  const showAdmin = useFeatureFlag(FLAG_KEYS.SHOW_ADMIN_PAGE, true);
-  const showAssignmentSatisfaction = useFeatureFlag(FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE, true);
+  // Stable flag values - only update when flag value actually changes (prevents unnecessary re-renders)
+  // Initialize as false - will be set once flags are loaded
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showPrep, setShowPrep] = useState(false);
+  const [showCompanyPrep, setShowCompanyPrep] = useState(false);
+  const [showStarStories, setShowStarStories] = useState(false);
+  const [showJobs, setShowJobs] = useState(false);
+  const [enableTimelineView, setEnableTimelineView] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [showAssignmentSatisfaction, setShowAssignmentSatisfaction] = useState(false);
+  const [showReadme, setShowReadme] = useState(false);
+
+  const previousValuesRef = useRef<Record<string, boolean | undefined>>({});
+
+  useEffect(() => {
+    if (!flagsReady) {
+      return; // Don't update flags if they're not loaded yet
+    }
+
+    const updateFlag = (key: string, value: boolean | undefined, defaultValue: boolean, setter: (val: boolean) => void) => {
+      // Only use defaultValue if flag doesn't exist in flags object
+      // If flag exists (even if undefined), use the actual value
+      const flagExists = key in flags;
+      const currentValue = flagExists ? (value ?? defaultValue) : defaultValue;
+      
+      if (previousValuesRef.current[key] !== currentValue) {
+        setter(currentValue);
+        previousValuesRef.current[key] = currentValue;
+      }
+    };
+
+    updateFlag(FLAG_KEYS.SHOW_DASHBOARD_PAGE, flags[FLAG_KEYS.SHOW_DASHBOARD_PAGE], true, setShowDashboard);
+    updateFlag(FLAG_KEYS.SHOW_ANALYTICS_PAGE, flags[FLAG_KEYS.SHOW_ANALYTICS_PAGE], true, setShowAnalytics);
+    updateFlag(FLAG_KEYS.SHOW_PREP_PAGE, flags[FLAG_KEYS.SHOW_PREP_PAGE], true, setShowPrep);
+    updateFlag(FLAG_KEYS.SHOW_COMPANY_PREP_PAGE, flags[FLAG_KEYS.SHOW_COMPANY_PREP_PAGE], true, setShowCompanyPrep);
+    updateFlag(FLAG_KEYS.SHOW_STAR_STORIES_PAGE, flags[FLAG_KEYS.SHOW_STAR_STORIES_PAGE], true, setShowStarStories);
+    updateFlag(FLAG_KEYS.SHOW_JOBS_PAGE, flags[FLAG_KEYS.SHOW_JOBS_PAGE], true, setShowJobs);
+    updateFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, flags[FLAG_KEYS.ENABLE_TIMELINE_VIEW], true, setEnableTimelineView);
+    updateFlag(FLAG_KEYS.SHOW_ADMIN_PAGE, flags[FLAG_KEYS.SHOW_ADMIN_PAGE], true, setShowAdmin);
+    updateFlag(FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE, flags[FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE], true, setShowAssignmentSatisfaction);
+    // Check if README page flag exists, otherwise default to true if admin is shown
+    const readmeFlagKey = 'show-readme-page';
+    const adminValue = flags[FLAG_KEYS.SHOW_ADMIN_PAGE] ?? true;
+    const readmeValue = flags[readmeFlagKey] ?? (adminValue ? true : false);
+    updateFlag(readmeFlagKey, readmeValue, true, setShowReadme);
+  }, [flags, flagsReady]);
+
+  // Don't render navigation until flags are ready to prevent flash
+  if (!flagsReady) {
+    return (
+      <aside className="w-64 bg-background-secondary border-r border-border flex flex-col">
+        <Link href="/landing" className="p-4 border-b border-border hover:bg-background-tertiary transition-colors">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-foreground">Job Search OS</div>
+              <div className="text-xs text-foreground-secondary truncate">
+                Local Workspace
+              </div>
+            </div>
+          </div>
+        </Link>
+        <nav className="flex-1 overflow-y-auto p-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-background-tertiary rounded w-3/4"></div>
+            <div className="h-8 bg-background-tertiary rounded"></div>
+            <div className="h-8 bg-background-tertiary rounded"></div>
+            <div className="h-8 bg-background-tertiary rounded"></div>
+          </div>
+        </nav>
+      </aside>
+    );
+  }
 
   // Filter navigation items based on flags
   const filteredNavigation = navigation.map((section) => {
@@ -98,8 +170,15 @@ export function Sidebar() {
         }),
       };
     }
+    if (section.title === "System") {
+      // Hide Component Library and Examples
+      return {
+        ...section,
+        items: [],
+      };
+    }
     return section;
-  });
+  }).filter((section) => section.items.length > 0); // Remove empty sections
 
   return (
     <aside className="w-64 bg-background-secondary border-r border-border flex flex-col">
@@ -118,6 +197,20 @@ export function Sidebar() {
       </Link>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Landing Page Link */}
+        <Link
+          href="/landing"
+          className={cn(
+            "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors mb-4",
+            pathname?.startsWith("/landing")
+              ? "bg-background-tertiary text-foreground"
+              : "text-foreground-secondary hover:bg-background-tertiary hover:text-foreground"
+          )}
+        >
+          <Home className="w-5 h-5" />
+          <span>Landing Page</span>
+        </Link>
+
         {filteredNavigation.map((section) => (
           <div key={section.title}>
             <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
@@ -196,7 +289,7 @@ export function Sidebar() {
                 )}
               >
                 <Settings className="w-5 h-5" />
-                <span>Feature Flags</span>
+                <span>ADMIN</span>
               </Link>
               {showAssignmentSatisfaction && (
                 <Link
@@ -210,6 +303,20 @@ export function Sidebar() {
                 >
                   <FileText className="w-5 h-5" />
                   <span>Assignment Docs</span>
+                </Link>
+              )}
+              {showReadme && (
+                <Link
+                  href="/admin/readme"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                    pathname === "/admin/readme"
+                      ? "bg-danger/10 text-danger border border-danger/20"
+                      : "text-danger hover:bg-danger/10 hover:text-danger border border-danger/20"
+                  )}
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>README</span>
                 </Link>
               )}
             </div>

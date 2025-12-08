@@ -6,33 +6,69 @@ import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
 import { Card } from "@/components/ui/Card";
 import { Star, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
-import { useLDClient } from "launchdarkly-react-client-sdk";
+import { useEffect, useState, useRef } from "react";
+import { useLDClient, useFlags } from "launchdarkly-react-client-sdk";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 export function TargetingDemoCard() {
-  const showPremiumFeature = useFeatureFlag(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO, false);
+  const flags = useFlags();
+  const flagsReady = useFlagsReady();
+  const [showPremiumFeature, setShowPremiumFeature] = useState(false);
+  const flagKey = FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
+  const previousValueRef = useRef<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    if (!flagsReady) {
+      return; // Don't update if flags aren't loaded yet
+    }
+
+    // Extract flag value
+    const currentValue = flags[flagKey] ?? false;
+    
+    // Only update state if value actually changed (prevents unnecessary re-renders)
+    if (previousValueRef.current !== currentValue) {
+      setShowPremiumFeature(currentValue);
+      previousValueRef.current = currentValue;
+    }
+  }, [flags, flagKey, flagsReady]);
+  
   const userContext = getOrCreateUserContext();
   const ldClient = useLDClient();
   
   // Debug logging
   useEffect(() => {
-    console.log('🎨 TargetingDemoCard render:', {
-      showPremiumFeature,
-      userContext: {
-        key: userContext.key,
-        email: userContext.email,
-        subscriptionTier: userContext.subscriptionTier,
-        betaTester: userContext.betaTester,
-        role: userContext.role
+    if (flagsReady) {
+      console.log('🎨 TargetingDemoCard render:', {
+        showPremiumFeature,
+        userContext: {
+          key: userContext.key,
+          email: userContext.email,
+          subscriptionTier: userContext.subscriptionTier,
+          betaTester: userContext.betaTester,
+          role: userContext.role
+        }
+      });
+      
+      // Also check flag value directly from client
+      if (ldClient) {
+        const directFlagValue = ldClient.variation('show-premium-feature-demo', false);
+        console.log('🎯 Direct flag value from client:', directFlagValue);
       }
-    });
-    
-    // Also check flag value directly from client
-    if (ldClient) {
-      const directFlagValue = ldClient.variation('show-premium-feature-demo', false);
-      console.log('🎯 Direct flag value from client:', directFlagValue);
     }
-  }, [showPremiumFeature, userContext.key, ldClient]);
+  }, [showPremiumFeature, userContext.key, ldClient, flagsReady]);
+
+  // Don't render until flags are ready to prevent flash
+  if (!flagsReady) {
+    return (
+      <Card className="p-6 space-y-5">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-background-tertiary rounded w-1/2"></div>
+          <div className="h-4 bg-background-tertiary rounded w-3/4"></div>
+          <div className="h-32 bg-background-tertiary rounded"></div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 space-y-5">

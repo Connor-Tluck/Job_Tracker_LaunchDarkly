@@ -207,28 +207,6 @@ export default function Home() {
         </div>
       )}
 
-      {showQuickLinks && (
-        <section className="grid gap-6 lg:grid-cols-3">
-          <QuickLinkCard
-            title="Job Tracker"
-            description="Sheets-style table with filters, status tracking, and quick prep links."
-            href="/jobs"
-            icon={FileText}
-          />
-          <QuickLinkCard
-            title="Master Prep"
-            description="Personal narrative, question banks, and reusable STAR stories."
-            href="/prep"
-            icon={Star}
-          />
-          <QuickLinkCard
-            title="Analytics Dashboard"
-            description="Response rates, pipeline velocity, and conversion trends."
-            href="/analytics"
-            icon={TrendingUp}
-          />
-        </section>
-      )}
 
       {showFollowUpsAlert && followUpsDue > 0 && (
         <Card className="p-4 bg-warning/10 border-warning/20">

@@ -32,6 +32,9 @@ export function UserContextSwitcher() {
     setIsSwitching(true);
     setUserContext(user);
     
+    // Dispatch custom event for other components to react
+    window.dispatchEvent(new CustomEvent('ld-user-context-changed'));
+    
     // Re-identify with LaunchDarkly
     if (ldClient) {
       const ldContext = {

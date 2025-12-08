@@ -7,15 +7,21 @@ import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 import { cn } from "@/lib/utils";
 import { useFlags } from "launchdarkly-react-client-sdk";
 import { useState, useEffect, useRef } from "react";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 // Stable navigation component - only updates when flag value actually changes
 function Navigation() {
   const flags = useFlags();
+  const flagsReady = useFlagsReady();
   const [showSupportBot, setShowSupportBot] = useState(false);
   const flagKey = FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
   const previousValueRef = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
+    if (!flagsReady) {
+      return; // Don't update if flags aren't loaded yet
+    }
+
     // Extract flag value
     const currentValue = flags[flagKey] ?? false;
     
@@ -24,7 +30,7 @@ function Navigation() {
       setShowSupportBot(currentValue);
       previousValueRef.current = currentValue;
     }
-  }, [flags, flagKey]);
+  }, [flags, flagKey, flagsReady]);
 
   return (
     <nav className="hidden md:flex items-center gap-6">
@@ -46,16 +52,15 @@ function Navigation() {
       >
         Analytics
       </Link>
-      <Link
-        href="/landing/support-bot"
-        className={cn(
-          "text-sm text-foreground-secondary hover:text-foreground flex items-center gap-1.5",
-          !showSupportBot && "hidden"
-        )}
-      >
-        <MessageCircle className="w-4 h-4" />
-        Support Bot
-      </Link>
+      {flagsReady && showSupportBot && (
+        <Link
+          href="/landing/support-bot"
+          className="text-sm text-foreground-secondary hover:text-foreground flex items-center gap-1.5"
+        >
+          <MessageCircle className="w-4 h-4" />
+          Support Bot
+        </Link>
+      )}
     </nav>
   );
 }

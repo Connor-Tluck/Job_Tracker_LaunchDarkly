@@ -9,6 +9,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { UserContextSwitcher } from "@/components/admin/UserContextSwitcher";
 import { TargetingDemoCard } from "@/components/admin/TargetingDemoCard";
+import { ChatTestCard } from "@/components/admin/ChatTestCard";
 
 export default function AdminPage() {
   // Get all flags (must be called before any conditional returns)
@@ -59,11 +60,40 @@ export default function AdminPage() {
         </p>
       </div>
 
+      {/* Summary Stats */}
+      <Card className="p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p className="text-xs text-foreground-secondary mb-1">Total Flags</p>
+            <p className="text-2xl font-semibold">{allFlagKeys.length}</p>
+          </div>
+          <div>
+            <p className="text-xs text-foreground-secondary mb-1">Enabled</p>
+            <p className="text-2xl font-semibold text-success">
+              {allFlagKeys.filter((key) => flags[key] ?? FLAG_METADATA[key].default).length}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-foreground-secondary mb-1">Disabled</p>
+            <p className="text-2xl font-semibold text-danger">
+              {allFlagKeys.filter((key) => !(flags[key] ?? FLAG_METADATA[key].default)).length}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-foreground-secondary mb-1">Filtered</p>
+            <p className="text-2xl font-semibold">{filteredFlags.length}</p>
+          </div>
+        </div>
+      </Card>
+
       {/* User Context Switcher & Targeting Demo */}
       <div className="grid md:grid-cols-2 gap-6">
         <UserContextSwitcher />
         <TargetingDemoCard />
       </div>
+
+      {/* Chat Test Interface */}
+      <ChatTestCard />
 
       {/* Search and Filter */}
       <Card className="p-4 sm:p-6">
@@ -166,32 +196,6 @@ export default function AdminPage() {
           <p className="text-foreground-secondary">No flags match your search criteria.</p>
         </Card>
       )}
-
-      {/* Summary Stats */}
-      <Card className="p-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-xs text-foreground-secondary mb-1">Total Flags</p>
-            <p className="text-2xl font-semibold">{allFlagKeys.length}</p>
-          </div>
-          <div>
-            <p className="text-xs text-foreground-secondary mb-1">Enabled</p>
-            <p className="text-2xl font-semibold text-success">
-              {allFlagKeys.filter((key) => flags[key] ?? FLAG_METADATA[key].default).length}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-foreground-secondary mb-1">Disabled</p>
-            <p className="text-2xl font-semibold text-danger">
-              {allFlagKeys.filter((key) => !(flags[key] ?? FLAG_METADATA[key].default)).length}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-foreground-secondary mb-1">Filtered</p>
-            <p className="text-2xl font-semibold">{filteredFlags.length}</p>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }
