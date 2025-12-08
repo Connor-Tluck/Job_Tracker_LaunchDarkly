@@ -288,6 +288,8 @@ If the CLI script fails to set up targeting rules, configure them manually in La
 
 **Note:** The chatbot uses LaunchDarkly AI Configs for prompt and model management, but still requires your OpenAI API key for actual API calls. Without this key, the chatbot will not function.
 
+**AI Configs Setup (Optional):** LaunchDarkly AI Configs are **optional** for basic chatbot functionality. If AI Configs are not configured in your LaunchDarkly account, the chatbot will use fallback defaults (friendly system prompt, `gpt-4o-mini` model). However, to demonstrate the AI Configs feature (e.g., grumpy chatbot for Beta Tester users), you'll need to set up AI Configs manually in the LaunchDarkly dashboard. See `feature_walkthrough.md` or `/admin/examples` for AI Configs setup instructions.
+
 #### Step 7: Run the Development Server
 
 ```bash
