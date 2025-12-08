@@ -33,89 +33,260 @@ A comprehensive job search management application converted to use LaunchDarkly'
 
 ## Installation
 
-**IMPORTANT: Follow these steps carefully to ensure the application runs correctly.**
+**IMPORTANT: Follow these steps carefully to ensure the application runs correctly. This guide assumes you have basic familiarity with Node.js, npm, and command-line tools.**
 
-### Prerequisites
+### Environment Assumptions
 
-- Node.js 18+ and npm
-- A LaunchDarkly account (sign up at [launchdarkly.com](https://launchdarkly.com) if needed)
+Before starting, ensure your environment meets these requirements:
+
+- **Node.js**: Version 18.0.0 or higher (check with `node --version`)
+- **npm**: Version 8.0.0 or higher (check with `npm --version`)
+- **Operating System**: macOS, Linux, or Windows (with WSL recommended for Windows)
+- **Browser**: Modern browser with JavaScript enabled (Chrome, Firefox, Safari, or Edge)
+- **LaunchDarkly Account**: A LaunchDarkly account with access to create projects and feature flags
+  - Sign up for a free trial at [launchdarkly.com/start-trial](https://launchdarkly.com/start-trial/) if needed
+  - The application uses LaunchDarkly's **Production** environment by default
+- **OpenAI Account**: An OpenAI account with API access (required for chatbot functionality)
+  - Sign up at [platform.openai.com](https://platform.openai.com) if needed
+  - You'll need API credits/billing set up to use the chatbot feature
 
 ### Step-by-Step Installation
 
-1. **Clone the repository:**
+#### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/Connor-Tluck/Job_Tracker_LaunchDarkly.git
+cd Job_Tracker_LaunchDarkly
+```
+
+**Verification:** You should see the project files including `package.json`, `README.md`, and `env.template`.
+
+#### Step 2: Install Dependencies
+
+```bash
+npm install
+```
+
+**What this does:** Installs all required Node.js packages including Next.js, LaunchDarkly SDKs, React, and other dependencies.
+
+**Expected output:** Should complete without errors. Installation may take 1-2 minutes.
+
+**Troubleshooting:** If you encounter errors:
+- Ensure Node.js 18+ is installed: `node --version`
+- Clear npm cache: `npm cache clean --force`
+- Delete `node_modules` and `package-lock.json`, then run `npm install` again
+
+#### Step 3: Set Up LaunchDarkly Account and Project
+
+1. **Create or Access LaunchDarkly Account:**
+   - Go to [app.launchdarkly.com](https://app.launchdarkly.com) and sign in
+   - If you don't have an account, sign up at [launchdarkly.com/start-trial](https://launchdarkly.com/start-trial/)
+
+2. **Create a New Project (or use existing):**
+   - Navigate to Project Settings: [app.launchdarkly.com/settings/projects](https://app.launchdarkly.com/settings/projects)
+   - Click "New Project" or select an existing project
+   - **Important:** Note your project key (you'll need this for flag import)
+
+3. **Get Your LaunchDarkly Credentials:**
+   - Navigate to [Account Settings → Authorization](https://app.launchdarkly.com/settings/authorization)
+   - Find your **Client-side ID** (starts with `sdk-` or similar)
+   - Navigate to [Project Settings → Environments](https://app.launchdarkly.com/settings/projects)
+   - Select the **Production** environment
+   - Copy the **SDK Key** (this is your server-side key)
+
+#### Step 4: Set Up Environment Variables
+
+1. **Create `.env.local` file:**
    ```bash
-   git clone https://github.com/Connor-Tluck/Job_Tracker_LaunchDarkly.git
-   cd Job_Tracker_LaunchDarkly
+   cp env.template .env.local
    ```
 
-2. **Install dependencies:**
+2. **Open `.env.local` in a text editor** and replace the placeholder values:
+
    ```bash
-   npm install
+   # LaunchDarkly Client-side ID (for React SDK)
+   # Get this from: Account Settings → Authorization
+   # Format: sdk-xxxxx or similar
+   NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID=your_launchdarkly_client_id_here
+
+   # LaunchDarkly Server SDK Key (for Node.js SDK)
+   # Get this from: Project Settings → Environments → Production → SDK Key
+   # Format: sdk-xxxxx-xxxxx-xxxxx
+   LAUNCHDARKLY_SDK_KEY=your_launchdarkly_sdk_key_here
+
+   # OpenAI API Key (required for chatbot functionality)
+   # Get this from: https://platform.openai.com/api-keys
+   # Format: sk-xxxxx...
+   OPENAI_API_KEY=your_openai_api_key_here
+
+   # Authentication (set to false for demo mode)
+   NEXT_PUBLIC_ENABLE_AUTH=false
    ```
 
-3. **Set up environment variables:**
-   - Copy `env.template` to `.env.local`:
-     ```bash
-     cp env.template .env.local
-     ```
-   
-   - Get your LaunchDarkly credentials from your LaunchDarkly project:
-     - Navigate to [LaunchDarkly Project Settings](https://app.launchdarkly.com/settings/projects)
-     - Select your project (or create a new one)
-   
-   - Add your **Client-side ID** to `.env.local`:
-     ```bash
-     NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID=your_launchdarkly_client_id_here
-     ```
-   
-   - Add your **Server SDK Key** to `.env.local`:
-     ```bash
-     LAUNCHDARKLY_SDK_KEY=your_launchdarkly_sdk_key_here
-     ```
-   
-   - Add your **OpenAI API Key** to `.env.local` (required for chatbot functionality):
-     ```bash
-     OPENAI_API_KEY=your_openai_api_key_here
-     ```
-     - Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
-     - **Note:** Even though the chatbot uses LaunchDarkly AI Configs for prompt and model management, OpenAI API calls still require your API key
+   **Critical Notes:**
+   - **DO NOT** commit `.env.local` to git (it's already in `.gitignore`)
+   - Replace `your_launchdarkly_client_id_here` with your actual Client-side ID
+   - Replace `your_launchdarkly_sdk_key_here` with your actual Production SDK Key
+   - Replace `your_openai_api_key_here` with your actual OpenAI API key
+   - The `NEXT_PUBLIC_ENABLE_AUTH=false` setting enables demo mode (no authentication required)
 
-4. **Import LaunchDarkly feature flags:**
-   
-   **Option A: Using CLI (Recommended - Fastest)**
-   - Install LaunchDarkly CLI:
-     ```bash
-     brew install launchdarkly/tap/ldcli
-     ```
-   - Authenticate:
-     ```bash
-     ldcli login
-     ```
-   - Import all flags:
-     ```bash
-     npm run ld:import -- --project YOUR_PROJECT_KEY
-     ```
-   
-   **Option B: Manual Creation**
-   - Create flags in LaunchDarkly dashboard using the keys from `launchdarkly/flags.json`
-   - All flags default to `true` (ON) - you can toggle them in LaunchDarkly
-   - Flag keys and descriptions are available in the Admin Control Panel (`/admin`) after flags are created
+3. **Verify your `.env.local` file:**
+   - Ensure all three keys are set (no `your_xxx_here` placeholders remain)
+   - Ensure there are no extra spaces or quotes around the values
+   - File should be in the project root directory (same level as `package.json`)
 
-5. **Run the development server:**
+#### Step 5: Import LaunchDarkly Feature Flags
+
+The application requires **30 feature flags** to be created in your LaunchDarkly project. You have two options:
+
+**Option A: Using LaunchDarkly CLI (Recommended - Fastest Method)**
+
+1. **Install LaunchDarkly CLI:**
    ```bash
-   npm run dev
+   # macOS (using Homebrew)
+   brew install launchdarkly/tap/ldcli
+   
+   # Linux/Windows - Download from: https://github.com/launchdarkly/ldcli/releases
    ```
 
-6. **Open the application:**
-   - Navigate to [http://localhost:3000](http://localhost:3000) in your browser
-   - The application should load with LaunchDarkly flags active
+2. **Authenticate CLI:**
+   ```bash
+   ldcli login
+   ```
+   - This will open your browser to authenticate
+   - Follow the prompts to authorize the CLI
 
-### Verification
+3. **Import all flags:**
+   ```bash
+   npm run ld:import -- --project YOUR_PROJECT_KEY
+   ```
+   - Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key
+   - Example: `npm run ld:import -- --project default`
+   - This imports all 30 flags from `launchdarkly/flags.json`
 
-- Application loads without errors
-- LaunchDarkly client connects (check browser console)
-- Feature flags are accessible (visit `/admin` to see flag status)
-- User context switcher works (visit `/admin` and switch users)
+**Option B: Manual Creation (Alternative Method)**
+
+If you prefer to create flags manually or CLI installation fails:
+
+1. **Open `launchdarkly/flags.json`** in a text editor
+2. **For each flag** in the file:
+   - Go to LaunchDarkly dashboard → Feature Flags → Create Flag
+   - Use the `key` value as the flag key
+   - Set the flag name to the `name` value
+   - Set description to the `description` value
+   - Set default value to `true` (ON)
+   - Save the flag
+3. **Repeat for all 30 flags** listed in the JSON file
+
+**Verification:** After importing flags:
+- Go to LaunchDarkly dashboard → Feature Flags
+- You should see 30 flags created
+- All flags should default to `true` (ON)
+
+#### Step 6: Set Up OpenAI API Key (For Chatbot Feature)
+
+1. **Create OpenAI Account:**
+   - Go to [platform.openai.com](https://platform.openai.com)
+   - Sign up or sign in
+
+2. **Get API Key:**
+   - Navigate to [API Keys](https://platform.openai.com/api-keys)
+   - Click "Create new secret key"
+   - Copy the key immediately (you won't be able to see it again)
+   - **Important:** Ensure billing is set up if required
+
+3. **Add to `.env.local`:**
+   - Already done in Step 4, but verify the key is correct
+   - Format should be: `sk-xxxxx...`
+
+**Note:** The chatbot uses LaunchDarkly AI Configs for prompt and model management, but still requires your OpenAI API key for actual API calls. Without this key, the chatbot will not function.
+
+#### Step 7: Run the Development Server
+
+```bash
+npm run dev
+```
+
+**Expected output:**
+```
+  ▲ Next.js 14.x.x
+  - Local:        http://localhost:3000
+  - Ready in X seconds
+```
+
+**What to expect:**
+- Server starts on port 3000
+- No errors in the terminal
+- You may see LaunchDarkly connection messages in the console
+
+**Troubleshooting:**
+- If port 3000 is in use, Next.js will automatically use the next available port (3001, 3002, etc.)
+- Check terminal output for the actual URL
+- If you see LaunchDarkly connection errors, verify your `.env.local` credentials
+
+#### Step 8: Open the Application
+
+1. **Open your browser** and navigate to:
+   ```
+   http://localhost:3000
+   ```
+
+2. **First Load:**
+   - The application should load without errors
+   - You may see a brief loading state while LaunchDarkly initializes
+   - The dashboard should appear with feature flags active
+
+3. **Verify LaunchDarkly Connection:**
+   - Open browser Developer Tools (F12 or Cmd+Option+I)
+   - Check the Console tab
+   - You should see LaunchDarkly connection messages (no errors)
+   - Look for messages like "LaunchDarkly client initialized" or similar
+
+### Verification Checklist
+
+After installation, verify everything is working:
+
+- [ ] **Application loads** at `http://localhost:3000` without errors
+- [ ] **LaunchDarkly client connects** (check browser console for connection messages)
+- [ ] **Feature flags are accessible** - Visit `/admin` to see flag status dashboard
+- [ ] **User context switcher works** - Visit `/admin` and switch between users (Beta Tester, Premium User, Free User)
+- [ ] **Flags control UI** - Toggle flags in LaunchDarkly dashboard and see instant changes
+- [ ] **Chatbot works** (if OpenAI key is set) - Visit `/landing/support-bot` and send a message
+- [ ] **No console errors** - Browser console should be free of critical errors
+
+### Common Issues and Solutions
+
+**Issue: "LaunchDarkly client not initialized"**
+- **Solution:** Verify `.env.local` has correct `NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID`
+- Check that the Client-side ID is correct (not the SDK Key)
+- Ensure there are no extra spaces or quotes
+
+**Issue: "Feature flags not loading"**
+- **Solution:** Verify flags are created in LaunchDarkly dashboard
+- Check that you're using the correct project key
+- Ensure flags match the keys in `launchdarkly/flags.json`
+
+**Issue: "Chatbot returns errors"**
+- **Solution:** Verify `OPENAI_API_KEY` is set correctly in `.env.local`
+- Check OpenAI account has credits/billing set up
+- Verify API key is valid at [platform.openai.com](https://platform.openai.com)
+
+**Issue: "Port already in use"**
+- **Solution:** Next.js will automatically use the next available port
+- Check terminal output for the actual URL
+- Or kill the process using port 3000: `lsof -ti:3000 | xargs kill`
+
+**Issue: "Module not found" errors**
+- **Solution:** Run `npm install` again
+- Delete `node_modules` and `package-lock.json`, then `npm install`
+- Ensure you're in the project root directory
+
+### Next Steps After Installation
+
+1. **Review Assignment Docs:** Navigate to `/admin/assignment-satisfaction` for detailed requirements documentation
+2. **Explore Admin Panel:** Visit `/admin` to see all flags and test user switching
+3. **Test Flag Toggling:** Toggle flags in LaunchDarkly dashboard and observe instant UI changes
+4. **Review Examples:** Check `feature_walkthrough.md` for step-by-step walkthroughs of each feature
 
 ---
 

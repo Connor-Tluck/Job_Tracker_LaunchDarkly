@@ -129,6 +129,11 @@ export async function POST(request: NextRequest) {
     
     const { messages, userContext } = requestBody;
 
+    // IMPORTANT: Replace this OpenAI API key with your actual OpenAI API key
+    // Get your API key from: https://platform.openai.com/api-keys
+    // Add it to your .env.local file as: OPENAI_API_KEY=your_api_key_here
+    // Note: Even though we use LaunchDarkly AI Configs for prompt/model management,
+    // OpenAI API calls still require your API key for authentication
     if (!process.env.OPENAI_API_KEY) {
       console.error('OPENAI_API_KEY is not set in environment variables');
       return NextResponse.json(

@@ -18,6 +18,9 @@ export async function getLDServerClient(): Promise<LaunchDarkly.LDClient | null>
     return ldServerClient;
   }
 
+  // IMPORTANT: Replace this SDK key with your LaunchDarkly Production SDK Key
+  // Get your SDK Key from: LaunchDarkly Dashboard → Project Settings → Environments → Production → SDK Key
+  // Add it to your .env.local file as: LAUNCHDARKLY_SDK_KEY=your_sdk_key_here
   const sdkKey = process.env.LAUNCHDARKLY_SDK_KEY;
   
   if (!sdkKey) {
