@@ -62,11 +62,11 @@ export type StarStory = {
 
 export const jobs: Job[] = [
   {
-    id: "hex",
-    company: "Hex",
+    id: "bex",
+    company: "Bex",
     title: "Solutions Engineer",
     applicationDate: "2025-10-29",
-    contactName: "Angela Meyer",
+    contactName: "Sarah Chen",
     contactType: "Warm",
     messaged: "Yes",
     response: "Pending",
@@ -74,10 +74,10 @@ export const jobs: Job[] = [
     nextStep: "Follow-up email 11/25",
     timeline: [
       { date: "2025-10-29", label: "Applied" },
-      { date: "2025-10-30", label: "Messaged Angela on LinkedIn" },
+      { date: "2025-10-30", label: "Messaged Sarah on LinkedIn" },
       { date: "2025-11-05", label: "Prep doc drafted" },
     ],
-    prepDocId: "prep-hex",
+    prepDocId: "prep-bex",
     metrics: {
       touchpoints: 3,
       daysSinceApply: 27,
@@ -158,42 +158,42 @@ export const jobs: Job[] = [
 ];
 
 export const prepDocs: Record<string, PrepDoc> = {
-  "prep-hex": {
-    id: "prep-hex",
+  "prep-bex": {
+    id: "prep-bex",
     overview:
-      "Collaborative analytics + AI workspace. Focus on data workflows, Magic AI, and customer collaboration.",
+      "Enterprise data platform focused on analytics workflows and customer collaboration.",
     companySummary:
-      "Hex unifies SQL, Python, AI cells, and interactive apps in a single workspace for analytics teams. It emphasizes rapid iteration, collaboration, and governed publishing.",
+      "Bex provides a unified data analytics platform that helps teams collaborate on data insights, build dashboards, and share analytics workflows across organizations.",
     whyCompany:
-      "Combines my background in data pipelines, customer-facing storytelling, and AI workflow design. Aligns with my work at Mach9 and Nearmap driving clarity with data.",
+      "Combines my background in data pipelines, customer-facing storytelling, and technical solution design. Aligns with my experience driving clarity with data.",
     productPillars: [
-      "Reactive workspace mixing SQL + Python + UI cells",
-      "Magic AI for query/code/doc generation",
-      "Publishing to apps, docs, dashboards",
-      "Enterprise governance, semantic layer, RBAC",
+      "Unified analytics workspace",
+      "Collaborative data workflows",
+      "Enterprise governance and security",
+      "API integrations and automation",
     ],
     customerProfiles: [
-      "Analytics/BI teams needing faster iteration",
-      "Data scientists collaborating with GTM teams",
-      "Ops teams running repeatable insights workflows",
+      "Analytics teams needing faster iteration",
+      "Data engineers collaborating with business teams",
+      "Operations teams running repeatable analytics workflows",
     ],
     interviewQuestions: [
       "How do SEs influence product roadmap?",
       "What does 90-day success look like?",
-      "Where is Magic AI headed in 2025?",
+      "Where is the platform headed in 2025?",
     ],
     tailoredStories: [
-      "Mach9 validation workflow",
-      "Nearmap usage reporting upsell",
-      "Digital SE automation proof",
+      "Technical validation workflow",
+      "Usage reporting and upsell",
+      "Automation and integration proof",
     ],
     questionsForThem: [
-      "How do they translate 'everyone is a data person' into GTM motions?",
+      "How do they translate data insights into business outcomes?",
       "How tightly do SEs pair with AEs during technical evaluations?",
     ],
     prepChecklist: [
-      "Review demo notebooks",
-      "Map Hex pillars to STAR stories",
+      "Review platform demos",
+      "Map Bex pillars to STAR stories",
       "Outline discovery questions by persona",
     ],
   },
@@ -331,7 +331,7 @@ export const analyticsSummary = {
     { label: "Rejected", value: 3 },
   ],
   upcomingActions: [
-    { date: "2025-11-25", label: "Hex follow-up", jobId: "hex" },
+    { date: "2025-11-25", label: "Bex follow-up", jobId: "bex" },
     { date: "2025-11-26", label: "Nearmap pre-call prep", jobId: "near-map" },
     { date: "2025-11-28", label: "Mach9 outbound push", jobId: "mach9" },
   ],

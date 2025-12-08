@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
+import { Star } from "lucide-react";
 
 export default function JobTrackerPage() {
   // Page access check
@@ -28,6 +30,10 @@ export default function JobTrackerPage() {
   if (!canAccess) {
     return notFound();
   }
+
+  // Targeting demo - this flag uses targeting rules
+  const showPremiumFeature = useFeatureFlag(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO, false);
+  const userContext = getOrCreateUserContext();
 
   return (
     <div className="min-h-screen bg-background">
@@ -312,6 +318,62 @@ export default function JobTrackerPage() {
           </div>
         </div>
       </section>
+
+      {/* Premium Feature Demo - Targeting Example */}
+      {showPremiumFeature && (
+        <section className="py-16 bg-primary/5 border-y border-primary/20">
+          <div className="max-w-7xl mx-auto px-6">
+            <Card className="p-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-primary/20">
+                  <Star className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium mb-3">
+                    Premium Feature - LaunchDarkly Targeting Demo
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-2">Exclusive Premium Feature</h3>
+                  <p className="text-foreground-secondary mb-4">
+                    This section is only visible to users targeted by LaunchDarkly rules. 
+                    You&apos;re seeing this because your user context matches our targeting rules!
+                  </p>
+                  <div className="bg-background-secondary/50 p-4 rounded-lg border border-border">
+                    <p className="text-sm font-semibold text-foreground mb-2">Your Current Context:</p>
+                    <div className="grid md:grid-cols-2 gap-3 text-sm text-foreground-secondary">
+                      <div>
+                        <span className="font-medium">Email:</span> {userContext.email}
+                      </div>
+                      <div>
+                        <span className="font-medium">Role:</span> {userContext.role}
+                      </div>
+                      <div>
+                        <span className="font-medium">Subscription:</span> {userContext.subscriptionTier}
+                      </div>
+                      <div>
+                        <span className="font-medium">Beta Tester:</span> {userContext.betaTester ? 'Yes' : 'No'}
+                      </div>
+                      {userContext.companySize && (
+                        <div>
+                          <span className="font-medium">Company Size:</span> {userContext.companySize}
+                        </div>
+                      )}
+                      {userContext.industry && (
+                        <div>
+                          <span className="font-medium">Industry:</span> {userContext.industry}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-foreground-muted mt-4">
+                    💡 <strong>Tip:</strong> Configure targeting rules in LaunchDarkly dashboard to control who sees this feature.
+                    Try targeting by subscriptionTier, betaTester, or role attributes.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

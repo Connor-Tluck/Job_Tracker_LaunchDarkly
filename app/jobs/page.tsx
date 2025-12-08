@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -20,6 +20,9 @@ import { EditableJobRow } from "@/components/jobs/EditableJobRow";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useLDClient } from "launchdarkly-react-client-sdk";
+import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
+import { trackPageView } from "@/lib/launchdarkly/tracking";
 
 const statusFilters = [
   "All",
@@ -34,6 +37,8 @@ export default function JobsPage() {
   // All hooks must be called before any conditional returns
   const router = useRouter();
   const params = useSearchParams();
+  const ldClient = useLDClient();
+  const userContext = getOrCreateUserContext();
   
   // Feature flags
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_JOBS_PAGE, true);
@@ -41,6 +46,19 @@ export default function JobsPage() {
   const enableTimelineView = useFeatureFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, true);
 
   const viewMode = params.get("view");
+
+  // Track page view
+  useEffect(() => {
+    if (canAccess) {
+      const viewType = viewMode === "timeline" ? "timeline" : "table";
+      trackPageView(ldClient, userContext, `jobs-${viewType}`, { viewMode: viewType });
+    }
+  }, [ldClient, userContext, canAccess, viewMode]);
+
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
 
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [search, setSearch] = useState("");

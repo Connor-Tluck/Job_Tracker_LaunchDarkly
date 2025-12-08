@@ -97,8 +97,8 @@ export interface AnalyticsSnapshot {
 
 export const jobs: Job[] = [
   {
-    id: "hex",
-    company: "Hex",
+    id: "bex",
+    company: "Bex",
     title: "Solutions Engineer",
     applicationDate: "2024-10-29",
     contactType: "Cold Outbound",
@@ -108,26 +108,26 @@ export const jobs: Job[] = [
     status: "Applied",
     phase: "Applied",
     impression: "High fit: AI + analytics",
-    jobPostingUrl: "https://hex.tech",
-    prepDocId: "hex-doc",
+    jobPostingUrl: "https://bex.tech",
+    prepDocId: "bex-doc",
     tags: ["AI", "Analytics", "Technical SE"],
     lastActivity: "2024-11-15",
     timeline: [
       {
-        id: "hex-1",
+        id: "bex-1",
         label: "Application Submitted",
         date: "2024-10-29",
         status: "completed",
       },
       {
-        id: "hex-2",
+        id: "bex-2",
         label: "Outbound Message",
         date: "2024-10-30",
         status: "completed",
         notes: "Sent LinkedIn note to recruiter",
       },
       {
-        id: "hex-3",
+        id: "bex-3",
         label: "Follow-up",
         date: "2024-11-18",
         status: "upcoming",
@@ -212,7 +212,7 @@ export const jobs: Job[] = [
         label: "Prep Refresh",
         date: "2024-11-22",
         status: "upcoming",
-        notes: "Add Hex vs Statista comparison blurb",
+        notes: "Add Bex vs Statista comparison blurb",
       },
     ],
   },
@@ -280,43 +280,43 @@ export const jobs: Job[] = [
 ];
 
 export const prepDocuments: Record<string, PrepDocument> = {
-  "hex-doc": {
-    id: "hex-doc",
+  "bex-doc": {
+    id: "bex-doc",
     companyOverview:
-      "Hex is a collaborative analytics and AI workspace that lets teams explore data, build analysis, and share interactive apps across SQL, Python, and visual blocks.",
+      "Bex is an enterprise data analytics platform that helps teams collaborate on data insights, build interactive dashboards, and share analytics workflows across organizations.",
     whyExcitesMe:
-      "Blends my SE background with data storytelling. Deep focus on clarity, shared truth, and AI assistance mirrors the problems I've solved at Mach9 and Nearmap.",
+      "Combines my SE background with data storytelling. Focus on clarity, collaboration, and technical solution design aligns with my experience solving customer problems.",
     productPillars: [
-      "Unified workspace: SQL, Python, visualization, AI in one canvas",
-      "Magic AI copilot for generating queries, docs, and transformations",
-      "Publishing & governance layer for sharing interactive notebooks safely",
-      "Enterprise controls: semantic layers, governance, RBAC, integrations",
+      "Unified analytics workspace for data teams",
+      "Collaborative data workflows and sharing",
+      "Enterprise governance and security controls",
+      "API integrations and automation capabilities",
     ],
     customerProfiles:
-      "Data teams, analytics engineers, and business operators who need fast collaborative analysis and the ability to package insight as internal apps.",
+      "Data teams, analytics engineers, and business operators who need fast collaborative analysis and the ability to package insights as internal tools.",
     relevantExperience: [
-      "Mach9: built LiDAR workflows, GTM alignment, AI feature extraction",
-      "Nearmap: Python + JS tooling, APIs, automation for enterprise accounts",
-      "Civil engineering foundation: structured storytelling for stakeholders",
+      "Built data workflows and GTM alignment",
+      "Developed APIs and automation for enterprise accounts",
+      "Structured storytelling for technical and business stakeholders",
     ],
     expectedQuestions: [
-      "Explain Hex's value differently for data teams vs executives.",
+      "Explain Bex's value differently for data teams vs executives.",
       "Walk through a time you guided a customer through a technical evaluation.",
       "Describe how you uncover the real problem behind a vague request.",
     ],
     tailoredStories: [
-      "Mach9 technical validation for ML workflow guidance",
-      "Nearmap data consumption clarity for 800k upsell",
-      "Digital SE RAG project for AI solutioning",
+      "Technical validation for workflow guidance",
+      "Data consumption clarity for enterprise upsell",
+      "Automation and integration project",
     ],
     questionsForThem: [
-      "How does Hex help companies adopt the 'everyone is a data person' vision?",
-      "Where do SEs influence product roadmap and Magic AI strategy?",
+      "How does Bex help companies democratize data access?",
+      "Where do SEs influence product roadmap and platform strategy?",
       "What defines a successful 90-day ramp for this team?",
     ],
-    peopleToMeet: ["Angela Meyer"],
+    peopleToMeet: ["Sarah Chen"],
     preparationNotes: [
-      "Bring examples of SQL + Python + visualization workflows",
+      "Bring examples of data workflows and integrations",
       "Highlight operator mindset and structured discovery approach",
       "Emphasize experience bridging technical teams and exec stakeholders",
     ],
@@ -324,12 +324,12 @@ export const prepDocuments: Record<string, PrepDocument> = {
       {
         title: "Call Narrative Outline",
         content:
-          "1. Re-intro + why Hex\n2. Customer problem framing\n3. Demo storyline: source of truth, Magic AI, publishing\n4. Proof of rigor examples",
+          "1. Re-intro + why Bex\n2. Customer problem framing\n3. Demo storyline: data workflows, collaboration, governance\n4. Proof of rigor examples",
       },
       {
         title: "Follow-up Assets",
         content:
-          "- Send Hex vs legacy spreadsheet comparison\n- Include link to analytics storytelling deck\n- Offer tailored workshop outline",
+          "- Send Bex vs legacy tools comparison\n- Include link to analytics storytelling deck\n- Offer tailored workshop outline",
       },
     ],
   },

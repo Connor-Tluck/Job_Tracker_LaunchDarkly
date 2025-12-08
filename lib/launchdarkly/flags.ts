@@ -30,13 +30,14 @@ export const FLAG_KEYS = {
   SHOW_DASHBOARD_QUICK_LINKS: 'show-dashboard-quick-links',
   SHOW_DASHBOARD_FOLLOW_UPS_ALERT: 'show-dashboard-follow-ups-alert',
 
-  // Feature Toggle Flags (6 flags)
+  // Feature Toggle Flags (7 flags)
   ENABLE_CSV_IMPORT: 'enable-csv-import',
   ENABLE_TIMELINE_VIEW: 'enable-timeline-view',
   ENABLE_INLINE_EDITING: 'enable-inline-editing',
   ENABLE_EXPORT_FUNCTIONALITY: 'enable-export-functionality',
   ENABLE_ADVANCED_FILTERS: 'enable-advanced-filters',
   ENABLE_BULK_ACTIONS: 'enable-bulk-actions',
+  SHOW_PREMIUM_FEATURE_DEMO: 'show-premium-feature-demo',
 
   // Job Detail Page Flags (4 flags)
   SHOW_JOB_TIMELINE_SECTION: 'show-job-timeline-section',
@@ -44,8 +45,9 @@ export const FLAG_KEYS = {
   SHOW_JOB_STAR_STORIES: 'show-job-star-stories',
   SHOW_JOB_METRICS_CARDS: 'show-job-metrics-cards',
 
-  // Admin & System Flags (1 flag)
+  // Admin & System Flags (2 flags)
   SHOW_ADMIN_PAGE: 'show-admin-page',
+  SHOW_ASSIGNMENT_SATISFACTION_PAGE: 'show-assignment-satisfaction-page',
 } as const;
 
 export type FlagKey = typeof FLAG_KEYS[keyof typeof FLAG_KEYS];
@@ -198,6 +200,12 @@ export const FLAG_METADATA = {
     category: 'Feature Toggles',
     default: true,
   },
+  [FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO]: {
+    name: 'Show Premium Feature Demo',
+    description: 'Demonstrates targeting - shows premium feature section on job tracker landing page. Configure targeting rules in LaunchDarkly dashboard.',
+    category: 'Feature Toggles',
+    default: false,
+  },
   [FLAG_KEYS.SHOW_JOB_TIMELINE_SECTION]: {
     name: 'Show Job Timeline Section',
     description: 'Controls visibility of the timeline section on job detail pages',
@@ -225,6 +233,12 @@ export const FLAG_METADATA = {
   [FLAG_KEYS.SHOW_ADMIN_PAGE]: {
     name: 'Show Admin Page',
     description: 'Controls access to the admin/feature flag dashboard. When enabled, shows a red admin button in the sidebar.',
+    category: 'Admin & System',
+    default: true,
+  },
+  [FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE]: {
+    name: 'Show Assignment Satisfaction Page',
+    description: 'Controls access to the assignment satisfaction documentation page (/admin/assignment-satisfaction)',
     category: 'Admin & System',
     default: true,
   },

@@ -7,8 +7,8 @@ import { LaunchDarklyProvider } from "@/components/LaunchDarklyProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Front End Template",
-  description: "A reusable UI/UX template for building modern applications",
+  title: "Job Search OS",
+  description: "Your complete job search management platform. Track applications, prepare for interviews, and land your dream job.",
 };
 
 export default function RootLayout({

@@ -15,6 +15,8 @@ import {
   Building2,
   LayoutDashboard,
   Settings,
+  FileText,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -62,6 +64,7 @@ export function Sidebar() {
   const searchParams = useSearchParams();
 
   // Feature flags for navigation items
+  const showDashboard = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_PAGE, true);
   const showAnalytics = useFeatureFlag(FLAG_KEYS.SHOW_ANALYTICS_PAGE, true);
   const showPrep = useFeatureFlag(FLAG_KEYS.SHOW_PREP_PAGE, true);
   const showCompanyPrep = useFeatureFlag(FLAG_KEYS.SHOW_COMPANY_PREP_PAGE, true);
@@ -69,6 +72,7 @@ export function Sidebar() {
   const showJobs = useFeatureFlag(FLAG_KEYS.SHOW_JOBS_PAGE, true);
   const enableTimelineView = useFeatureFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, true);
   const showAdmin = useFeatureFlag(FLAG_KEYS.SHOW_ADMIN_PAGE, true);
+  const showAssignmentSatisfaction = useFeatureFlag(FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE, true);
 
   // Filter navigation items based on flags
   const filteredNavigation = navigation.map((section) => {
@@ -99,10 +103,10 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-background-secondary border-r border-border flex flex-col">
-      <div className="p-4 border-b border-border">
+      <Link href="/landing" className="p-4 border-b border-border hover:bg-background-tertiary transition-colors">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-            P
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+            <Briefcase className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium text-foreground">Job Search OS</div>
@@ -111,7 +115,7 @@ export function Sidebar() {
             </div>
           </div>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-6">
         {filteredNavigation.map((section) => (
@@ -119,7 +123,7 @@ export function Sidebar() {
             <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
               {section.title}
             </div>
-            {section.title === "Pipeline" && (
+            {section.title === "Pipeline" && showDashboard && (
               <Link
                 href="/"
                 className={cn(
@@ -181,18 +185,34 @@ export function Sidebar() {
             <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
               Admin
             </div>
-            <Link
-              href="/admin"
-              className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                pathname === "/admin"
-                  ? "bg-danger/10 text-danger border border-danger/20"
-                  : "text-danger hover:bg-danger/10 hover:text-danger border border-danger/20"
+            <div className="space-y-1">
+              <Link
+                href="/admin"
+                className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                  pathname === "/admin"
+                    ? "bg-danger/10 text-danger border border-danger/20"
+                    : "text-danger hover:bg-danger/10 hover:text-danger border border-danger/20"
+                )}
+              >
+                <Settings className="w-5 h-5" />
+                <span>Feature Flags</span>
+              </Link>
+              {showAssignmentSatisfaction && (
+                <Link
+                  href="/admin/assignment-satisfaction"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                    pathname === "/admin/assignment-satisfaction"
+                      ? "bg-danger/10 text-danger border border-danger/20"
+                      : "text-danger hover:bg-danger/10 hover:text-danger border border-danger/20"
+                  )}
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>Assignment Docs</span>
+                </Link>
               )}
-            >
-              <Settings className="w-5 h-5" />
-              <span>Feature Flags</span>
-            </Link>
+            </div>
           </div>
         )}
       </nav>

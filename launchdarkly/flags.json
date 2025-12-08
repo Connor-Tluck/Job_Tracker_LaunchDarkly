@@ -169,6 +169,13 @@
       "default": true
     },
     {
+      "key": "show-premium-feature-demo",
+      "name": "Show Premium Feature Demo",
+      "description": "Demonstrates targeting - shows premium feature section on job tracker landing page. Configure targeting rules in LaunchDarkly dashboard.",
+      "category": "Feature Toggles",
+      "default": false
+    },
+    {
       "key": "show-job-timeline-section",
       "name": "Show Job Timeline Section",
       "description": "Controls visibility of the timeline section on job detail pages",
@@ -200,6 +207,13 @@
       "key": "show-admin-page",
       "name": "Show Admin Page",
       "description": "Controls access to the admin/feature flag dashboard. When enabled, shows a red admin button in the sidebar.",
+      "category": "Admin & System",
+      "default": true
+    },
+    {
+      "key": "show-assignment-satisfaction-page",
+      "name": "Show Assignment Satisfaction Page",
+      "description": "Controls access to the assignment satisfaction documentation page (/admin/assignment-satisfaction)",
       "category": "Admin & System",
       "default": true
     }

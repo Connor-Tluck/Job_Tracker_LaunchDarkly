@@ -1,14 +1,28 @@
 "use client";
 
 import { notFound } from "next/navigation";
+import { useEffect } from "react";
 import { analyticsSummary } from "@/lib/mock-data";
 import { AnalyticsPanel } from "@/components/analytics/AnalyticsPanel";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useLDClient } from "launchdarkly-react-client-sdk";
+import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
+import { trackPageView } from "@/lib/launchdarkly/tracking";
 
 export default function AnalyticsPage() {
   // Page access check
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_ANALYTICS_PAGE, true);
+  const ldClient = useLDClient();
+  const userContext = getOrCreateUserContext();
+
+  // Track page view
+  useEffect(() => {
+    if (canAccess) {
+      trackPageView(ldClient, userContext, "analytics");
+    }
+  }, [ldClient, userContext, canAccess]);
+
   if (!canAccess) {
     return notFound();
   }

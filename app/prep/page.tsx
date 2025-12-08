@@ -18,6 +18,9 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useLDClient } from "launchdarkly-react-client-sdk";
+import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
+import { trackPageView } from "@/lib/launchdarkly/tracking";
 
 const initialInterviewQuestions = [
   "Tell me about a complex technical challenge you solved for a customer and how you approached it.",
@@ -43,6 +46,21 @@ const initialQuestionsForThem = [
 export default function PrepPage() {
   // All hooks must be called before any conditional returns
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREP_PAGE, true);
+  const ldClient = useLDClient();
+  const userContext = getOrCreateUserContext();
+
+  // Track page view
+  useEffect(() => {
+    if (canAccess) {
+      trackPageView(ldClient, userContext, "prep");
+    }
+  }, [ldClient, userContext, canAccess]);
+  
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
+
   const [generalDocs, setGeneralDocs] = useState<GeneralDoc[]>(initialGeneralDocs);
   const [interviewQuestions, setInterviewQuestions] = useState<string[]>(initialInterviewQuestions);
   const [questionsForThem, setQuestionsForThem] = useState<string[]>(initialQuestionsForThem);

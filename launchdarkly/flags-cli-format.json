@@ -648,6 +648,33 @@
     "temporary": false
   },
   {
+    "name": "Show Premium Feature Demo",
+    "key": "show-premium-feature-demo",
+    "description": "Demonstrates targeting - shows premium feature section on job tracker landing page. Configure targeting rules in LaunchDarkly dashboard.",
+    "tags": [
+      "feature-toggles"
+    ],
+    "variations": [
+      {
+        "value": true,
+        "name": "On"
+      },
+      {
+        "value": false,
+        "name": "Off"
+      }
+    ],
+    "defaults": {
+      "onVariation": 0,
+      "offVariation": 1
+    },
+    "clientSideAvailability": {
+      "usingEnvironmentId": true,
+      "usingMobileKey": false
+    },
+    "temporary": false
+  },
+  {
     "name": "Show Job Timeline Section",
     "key": "show-job-timeline-section",
     "description": "Controls visibility of the timeline section on job detail pages",
@@ -759,6 +786,33 @@
     "name": "Show Admin Page",
     "key": "show-admin-page",
     "description": "Controls access to the admin/feature flag dashboard. When enabled, shows a red admin button in the sidebar.",
+    "tags": [
+      "admin-system"
+    ],
+    "variations": [
+      {
+        "value": true,
+        "name": "On"
+      },
+      {
+        "value": false,
+        "name": "Off"
+      }
+    ],
+    "defaults": {
+      "onVariation": 0,
+      "offVariation": 1
+    },
+    "clientSideAvailability": {
+      "usingEnvironmentId": true,
+      "usingMobileKey": false
+    },
+    "temporary": false
+  },
+  {
+    "name": "Show Assignment Satisfaction Page",
+    "key": "show-assignment-satisfaction-page",
+    "description": "Controls access to the assignment satisfaction documentation page (/admin/assignment-satisfaction)",
     "tags": [
       "admin-system"
     ],

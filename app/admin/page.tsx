@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/Card";
 import { CheckCircle2, XCircle, Copy, Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { UserContextSwitcher } from "@/components/admin/UserContextSwitcher";
+import { TargetingDemoCard } from "@/components/admin/TargetingDemoCard";
 
 export default function AdminPage() {
   // Get all flags (must be called before any conditional returns)
@@ -57,26 +59,34 @@ export default function AdminPage() {
         </p>
       </div>
 
+      {/* User Context Switcher & Targeting Demo */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <UserContextSwitcher />
+        <TargetingDemoCard />
+      </div>
+
       {/* Search and Filter */}
-      <Card className="p-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-foreground-secondary" />
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col gap-4">
+          {/* Search Bar */}
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-foreground-secondary pointer-events-none z-10" />
             <input
               type="text"
               placeholder="Search flags by name, description, or key..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full pl-10 pr-4 py-2.5 sm:py-2 rounded-lg border border-border bg-background-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
+          {/* Category Filters */}
           <div className="flex gap-2 flex-wrap">
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm border transition-colors",
+                  "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm border transition-colors whitespace-nowrap",
                   selectedCategory === category
                     ? "bg-primary text-white border-primary"
                     : "border-border text-foreground-secondary hover:text-foreground hover:bg-background-tertiary"

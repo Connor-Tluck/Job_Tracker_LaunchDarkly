@@ -2,13 +2,70 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { FileText } from "lucide-react";
+import { FileText, MessageCircle } from "lucide-react";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { cn } from "@/lib/utils";
+import { useFlags } from "launchdarkly-react-client-sdk";
+import { useState, useEffect, useRef } from "react";
+
+// Stable navigation component - only updates when flag value actually changes
+function Navigation() {
+  const flags = useFlags();
+  const [showSupportBot, setShowSupportBot] = useState(false);
+  const flagKey = FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
+  const previousValueRef = useRef<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    // Extract flag value
+    const currentValue = flags[flagKey] ?? false;
+    
+    // Only update state if value actually changed (prevents unnecessary re-renders)
+    if (previousValueRef.current !== currentValue) {
+      setShowSupportBot(currentValue);
+      previousValueRef.current = currentValue;
+    }
+  }, [flags, flagKey]);
+
+  return (
+    <nav className="hidden md:flex items-center gap-6">
+      <Link
+        href="/landing/job-tracker"
+        className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
+      >
+        Job Tracker
+      </Link>
+      <Link
+        href="/landing/prep-hub"
+        className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
+      >
+        Prep Hub
+      </Link>
+      <Link
+        href="/landing/analytics"
+        className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
+      >
+        Analytics
+      </Link>
+      <Link
+        href="/landing/support-bot"
+        className={cn(
+          "text-sm text-foreground-secondary hover:text-foreground flex items-center gap-1.5",
+          !showSupportBot && "hidden"
+        )}
+      >
+        <MessageCircle className="w-4 h-4" />
+        Support Bot
+      </Link>
+    </nav>
+  );
+}
 
 export default function LandingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
@@ -22,26 +79,7 @@ export default function LandingLayout({
               <span className="font-semibold text-lg">Job Search OS</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-6">
-              <Link
-                href="/landing/job-tracker"
-                className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
-              >
-                Job Tracker
-              </Link>
-              <Link
-                href="/landing/prep-hub"
-                className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
-              >
-                Prep Hub
-              </Link>
-              <Link
-                href="/landing/analytics"
-                className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
-              >
-                Analytics
-              </Link>
-            </nav>
+            <Navigation />
 
             <div className="flex items-center gap-3">
               <Link href="/">

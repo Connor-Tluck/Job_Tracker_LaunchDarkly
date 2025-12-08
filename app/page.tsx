@@ -16,13 +16,26 @@ import {
   Star,
   AlertCircle,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useLDClient } from "launchdarkly-react-client-sdk";
+import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
+import { trackPageView } from "@/lib/launchdarkly/tracking";
 
 export default function Home() {
   // Page access check
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_PAGE, true);
+  const ldClient = useLDClient();
+  const userContext = getOrCreateUserContext();
+
+  // Track page view
+  useEffect(() => {
+    if (canAccess) {
+      trackPageView(ldClient, userContext, "dashboard");
+    }
+  }, [ldClient, userContext, canAccess]);
+
   if (!canAccess) {
     return notFound();
   }

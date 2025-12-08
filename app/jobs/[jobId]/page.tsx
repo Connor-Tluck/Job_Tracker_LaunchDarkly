@@ -33,6 +33,11 @@ export default function JobDetailPage() {
   const showMetrics = useFeatureFlag(FLAG_KEYS.SHOW_JOB_METRICS_CARDS, true);
   const enableInlineEditing = useFeatureFlag(FLAG_KEYS.ENABLE_INLINE_EDITING, true);
 
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
+
   const initialJob = initialJobs.find((entry) => entry.id === jobId);
 
   const [job, setJob] = useState<Job | null>(initialJob || null);

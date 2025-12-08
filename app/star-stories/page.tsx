@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import { starStories as initialStories, StarStory } from "@/lib/mock-data";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,9 @@ import { Plus, Edit2, Grid3x3, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useLDClient } from "launchdarkly-react-client-sdk";
+import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
+import { trackPageView } from "@/lib/launchdarkly/tracking";
 
 const categories = ["All", "Enterprise", "Analytics", "AI", "Delivery"] as const;
 
@@ -18,6 +21,21 @@ type ViewMode = "grid" | "list";
 export default function StarStoriesPage() {
   // All hooks must be called before any conditional returns
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_STAR_STORIES_PAGE, true);
+  const ldClient = useLDClient();
+  const userContext = getOrCreateUserContext();
+
+  // Track page view
+  useEffect(() => {
+    if (canAccess) {
+      trackPageView(ldClient, userContext, "star-stories");
+    }
+  }, [ldClient, userContext, canAccess]);
+  
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
+
   const [stories, setStories] = useState<StarStory[]>(initialStories);
   const [category, setCategory] = useState<(typeof categories)[number]>("All");
   const [search, setSearch] = useState("");
