@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Notebook,
   Table as TableIcon,
@@ -13,6 +13,7 @@ import {
   StickyNote,
   FolderTree,
   Building2,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,7 @@ const navigation: NavSection[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <aside className="w-64 bg-background-secondary border-r border-border flex flex-col">
@@ -78,10 +80,42 @@ export function Sidebar() {
             <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
               {section.title}
             </div>
+            {section.title === "Pipeline" && (
+              <Link
+                href="/"
+                className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors mb-1",
+                  pathname === "/"
+                    ? "bg-background-tertiary text-foreground"
+                    : "text-foreground-secondary hover:bg-background-tertiary hover:text-foreground"
+                )}
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                <span>Dashboard</span>
+              </Link>
+            )}
             <div className="space-y-1">
               {section.items.map((item, idx) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                let isActive = false;
+                
+                // Special handling for Timeline with query parameter
+                if (item.href === "/jobs?view=timeline") {
+                  isActive = pathname === "/jobs" && searchParams?.get("view") === "timeline";
+                } 
+                // For Jobs Table, only active if on /jobs without the timeline view parameter
+                else if (item.href === "/jobs") {
+                  isActive = pathname === "/jobs" && searchParams?.get("view") !== "timeline";
+                }
+                // For Master Prep, only active if exactly /prep (not /prep/companies or other sub-routes)
+                else if (item.href === "/prep") {
+                  isActive = pathname === "/prep";
+                }
+                // For other items, check if the href matches the pathname or is a sub-route
+                else {
+                  isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                }
+                
                 return (
                   <Link
                     key={`${section.title}-${item.name}-${idx}`}
