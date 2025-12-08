@@ -7,11 +7,9 @@ import {
   Table as TableIcon,
   TrendingUp,
   Star,
-  Layers,
   CalendarClock,
   LucideIcon,
   StickyNote,
-  FolderTree,
   Building2,
   LayoutDashboard,
   Settings,
@@ -52,13 +50,6 @@ const navigation: NavSection[] = [
       { name: "Master Prep", href: "/prep", icon: Notebook },
       { name: "Company Prep", href: "/prep/companies", icon: Building2 },
       { name: "STAR Stories", href: "/star-stories", icon: Star },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      { name: "Component Library", href: "/components", icon: Layers },
-      { name: "Examples", href: "/examples", icon: FolderTree },
     ],
   },
 ];
@@ -168,13 +159,6 @@ export function Sidebar() {
           if (item.href === "/star-stories") return showStarStories;
           return true;
         }),
-      };
-    }
-    if (section.title === "System") {
-      // Hide Component Library and Examples
-      return {
-        ...section,
-        items: [],
       };
     }
     return section;
