@@ -6,7 +6,7 @@ A comprehensive job search management application converted to use LaunchDarkly'
 
 ## For Reviewers: Suggested Review Path
 
-We suggest starting with the Assignment Docs page as your primary guide during the review process.
+Start with the Assignment Docs page as your primary guide during the review process.
 
 ### Assignment Docs Page (Suggested Starting Point)
 - **Route:** `/admin/assignment-satisfaction`
@@ -409,7 +409,7 @@ After installation, verify everything is working:
 
 ## Overview
 
-This application was built by converting an existing job tracker project to use LaunchDarkly's feature flag ecosystem. Using LaunchDarkly's SDK and CLI tools, I integrated **30 feature flags** that control page access, component visibility, and feature toggles throughout the application.
+This application was built by converting an existing job tracker project to use LaunchDarkly's feature flag ecosystem. Using LaunchDarkly's SDK and CLI tools, the project integrates **30 feature flags** that control page access, component visibility, and feature toggles throughout the application.
 
 ### What Was Built
 
