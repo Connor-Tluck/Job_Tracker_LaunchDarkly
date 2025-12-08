@@ -88,13 +88,8 @@ export default function LandingLayout({
 
             <div className="flex items-center gap-3">
               <Link href="/">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/jobs">
                 <Button variant="primary" size="sm">
-                  Get Started
+                  Open App
                 </Button>
               </Link>
             </div>

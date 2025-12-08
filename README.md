@@ -72,6 +72,13 @@ A comprehensive job search management application converted to use LaunchDarkly'
      ```bash
      LAUNCHDARKLY_SDK_KEY=your_launchdarkly_sdk_key_here
      ```
+   
+   - Add your **OpenAI API Key** to `.env.local` (required for chatbot functionality):
+     ```bash
+     OPENAI_API_KEY=your_openai_api_key_here
+     ```
+     - Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+     - **Note:** Even though the chatbot uses LaunchDarkly AI Configs for prompt and model management, OpenAI API calls still require your API key
 
 4. **Import LaunchDarkly feature flags:**
    

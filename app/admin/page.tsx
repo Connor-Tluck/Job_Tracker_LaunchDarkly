@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { useFeatureFlag, useFeatureFlags } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS, FLAG_METADATA } from "@/lib/launchdarkly/flags";
 import { Card } from "@/components/ui/Card";
-import { CheckCircle2, XCircle, Copy, Search } from "lucide-react";
+import { CheckCircle2, XCircle, Copy, Search, Server } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { UserContextSwitcher } from "@/components/admin/UserContextSwitcher";
@@ -59,6 +59,26 @@ export default function AdminPage() {
           View and monitor all LaunchDarkly feature flags in real-time
         </p>
       </div>
+
+      {/* Environment Info */}
+      <Card className="p-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Server className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-semibold">Current Environment</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">
+                Production
+              </span>
+            </div>
+            <p className="text-xs text-foreground-secondary">
+              LaunchDarkly feature flags are retrieved from the production environment
+            </p>
+          </div>
+        </div>
+      </Card>
 
       {/* Summary Stats */}
       <Card className="p-6">

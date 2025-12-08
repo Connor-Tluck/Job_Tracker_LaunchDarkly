@@ -2,11 +2,11 @@
 
 import { useFeatureFlag, useFeatureFlags } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
-import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
+import { getOrCreateUserContext, UserContext } from "@/lib/launchdarkly/userContext";
 import { Card } from "@/components/ui/Card";
 import { Star, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useLDClient, useFlags } from "launchdarkly-react-client-sdk";
 import { useFlagsReady } from "@/hooks/useFlagsReady";
 
@@ -14,8 +14,42 @@ export function TargetingDemoCard() {
   const flags = useFlags();
   const flagsReady = useFlagsReady();
   const [showPremiumFeature, setShowPremiumFeature] = useState(false);
+  const [userContext, setUserContext] = useState<UserContext | null>(null);
   const flagKey = FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
   const previousValueRef = useRef<boolean | undefined>(undefined);
+
+  // Load user context
+  const loadUserContext = useCallback(() => {
+    const user = getOrCreateUserContext();
+    setUserContext(user);
+  }, []);
+
+  useEffect(() => {
+    // Load initially
+    loadUserContext();
+    
+    // Listen for user context changes
+    const handleUserContextChange = () => {
+      loadUserContext();
+    };
+    
+    // Listen for custom event
+    window.addEventListener('ld-user-context-changed', handleUserContextChange);
+    
+    // Listen for storage events (cross-tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ld-user-context') {
+        loadUserContext();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('ld-user-context-changed', handleUserContextChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [loadUserContext]);
 
   useEffect(() => {
     if (!flagsReady) {
@@ -32,12 +66,11 @@ export function TargetingDemoCard() {
     }
   }, [flags, flagKey, flagsReady]);
   
-  const userContext = getOrCreateUserContext();
   const ldClient = useLDClient();
   
   // Debug logging
   useEffect(() => {
-    if (flagsReady) {
+    if (flagsReady && userContext) {
       console.log('🎨 TargetingDemoCard render:', {
         showPremiumFeature,
         userContext: {
@@ -55,10 +88,10 @@ export function TargetingDemoCard() {
         console.log('🎯 Direct flag value from client:', directFlagValue);
       }
     }
-  }, [showPremiumFeature, userContext.key, ldClient, flagsReady]);
+  }, [showPremiumFeature, userContext?.key, ldClient, flagsReady]);
 
-  // Don't render until flags are ready to prevent flash
-  if (!flagsReady) {
+  // Don't render until flags are ready and user context is loaded
+  if (!flagsReady || !userContext) {
     return (
       <Card className="p-6 space-y-5">
         <div className="animate-pulse space-y-4">
@@ -116,42 +149,6 @@ export function TargetingDemoCard() {
               </div>
             </div>
           </div>
-
-          <div className="bg-background-tertiary p-5 rounded-lg border border-border">
-            <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-wider">
-              Your Current Context
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-foreground-secondary text-xs">Email:</span>
-                <div className="font-medium mt-1 break-all">{userContext.email}</div>
-              </div>
-              <div>
-                <span className="text-foreground-secondary text-xs">Role:</span>
-                <div className="font-medium mt-1">{userContext.role}</div>
-              </div>
-              <div>
-                <span className="text-foreground-secondary text-xs">Subscription:</span>
-                <div className="font-medium mt-1 capitalize">{userContext.subscriptionTier}</div>
-              </div>
-              <div>
-                <span className="text-foreground-secondary text-xs">Beta Tester:</span>
-                <div className="font-medium mt-1">{userContext.betaTester ? 'Yes' : 'No'}</div>
-              </div>
-              {userContext.companySize && (
-                <div>
-                  <span className="text-foreground-secondary text-xs">Company Size:</span>
-                  <div className="font-medium mt-1 capitalize">{userContext.companySize}</div>
-                </div>
-              )}
-              {userContext.industry && (
-                <div>
-                  <span className="text-foreground-secondary text-xs">Industry:</span>
-                  <div className="font-medium mt-1">{userContext.industry}</div>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       ) : (
         <div className="bg-background-tertiary/50 border border-border-dashed rounded-lg p-8 text-center animate-in fade-in duration-300">
@@ -164,6 +161,43 @@ export function TargetingDemoCard() {
           </p>
         </div>
       )}
+
+      {/* Current Context - Always visible regardless of flag state */}
+      <div className="bg-background-tertiary p-5 rounded-lg border border-border">
+        <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-wider">
+          Your Current Context
+        </p>
+        <div className="grid grid-cols-2 gap-4 text-sm" key={`context-${userContext.key}`}>
+          <div>
+            <span className="text-foreground-secondary text-xs">Email:</span>
+            <div className="font-medium mt-1 break-all" key={`email-${userContext.key}`}>{userContext.email}</div>
+          </div>
+          <div>
+            <span className="text-foreground-secondary text-xs">Role:</span>
+            <div className="font-medium mt-1" key={`role-${userContext.key}`}>{userContext.role}</div>
+          </div>
+          <div>
+            <span className="text-foreground-secondary text-xs">Subscription:</span>
+            <div className="font-medium mt-1 capitalize" key={`subscription-${userContext.key}`}>{userContext.subscriptionTier}</div>
+          </div>
+          <div>
+            <span className="text-foreground-secondary text-xs">Beta Tester:</span>
+            <div className="font-medium mt-1" key={`beta-${userContext.key}`}>{userContext.betaTester ? 'Yes' : 'No'}</div>
+          </div>
+          {userContext.companySize && (
+            <div>
+              <span className="text-foreground-secondary text-xs">Company Size:</span>
+              <div className="font-medium mt-1 capitalize" key={`company-${userContext.key}`}>{userContext.companySize}</div>
+            </div>
+          )}
+          {userContext.industry && (
+            <div>
+              <span className="text-foreground-secondary text-xs">Industry:</span>
+              <div className="font-medium mt-1" key={`industry-${userContext.key}`}>{userContext.industry}</div>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="pt-4 border-t border-border">
         <p className="text-xs text-foreground-muted leading-relaxed">

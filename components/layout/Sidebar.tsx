@@ -37,6 +37,12 @@ interface NavSection {
 
 const navigation: NavSection[] = [
   {
+    title: "Marketing Site",
+    items: [
+      { name: "Landing Page", href: "/landing", icon: Home },
+    ],
+  },
+  {
     title: "Pipeline",
     items: [
       { name: "Jobs Table", href: "/jobs", icon: TableIcon },
@@ -71,7 +77,6 @@ export function Sidebar() {
   const [enableTimelineView, setEnableTimelineView] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAssignmentSatisfaction, setShowAssignmentSatisfaction] = useState(false);
-  const [showReadme, setShowReadme] = useState(false);
 
   const previousValuesRef = useRef<Record<string, boolean | undefined>>({});
 
@@ -101,11 +106,6 @@ export function Sidebar() {
     updateFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, flags[FLAG_KEYS.ENABLE_TIMELINE_VIEW], true, setEnableTimelineView);
     updateFlag(FLAG_KEYS.SHOW_ADMIN_PAGE, flags[FLAG_KEYS.SHOW_ADMIN_PAGE], true, setShowAdmin);
     updateFlag(FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE, flags[FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE], true, setShowAssignmentSatisfaction);
-    // Check if README page flag exists, otherwise default to true if admin is shown
-    const readmeFlagKey = 'show-readme-page';
-    const adminValue = flags[FLAG_KEYS.SHOW_ADMIN_PAGE] ?? true;
-    const readmeValue = flags[readmeFlagKey] ?? (adminValue ? true : false);
-    updateFlag(readmeFlagKey, readmeValue, true, setShowReadme);
   }, [flags, flagsReady]);
 
   // Don't render navigation until flags are ready to prevent flash
@@ -181,20 +181,6 @@ export function Sidebar() {
       </Link>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Landing Page Link */}
-        <Link
-          href="/landing"
-          className={cn(
-            "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors mb-4",
-            pathname?.startsWith("/landing")
-              ? "bg-background-tertiary text-foreground"
-              : "text-foreground-secondary hover:bg-background-tertiary hover:text-foreground"
-          )}
-        >
-          <Home className="w-5 h-5" />
-          <span>Landing Page</span>
-        </Link>
-
         {filteredNavigation.map((section) => (
           <div key={section.title}>
             <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
@@ -287,20 +273,6 @@ export function Sidebar() {
                 >
                   <FileText className="w-5 h-5" />
                   <span>Assignment Docs</span>
-                </Link>
-              )}
-              {showReadme && (
-                <Link
-                  href="/admin/readme"
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                    pathname === "/admin/readme"
-                      ? "bg-danger/10 text-danger border border-danger/20"
-                      : "text-danger hover:bg-danger/10 hover:text-danger border border-danger/20"
-                  )}
-                >
-                  <FileText className="w-5 h-5" />
-                  <span>README</span>
                 </Link>
               )}
             </div>

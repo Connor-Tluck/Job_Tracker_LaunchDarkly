@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext, setUserContext, getDemoUsers, UserContext } from "@/lib/launchdarkly/userContext";
 import { Card } from "@/components/ui/Card";
@@ -13,12 +13,50 @@ export function UserContextSwitcher() {
   const [currentUser, setCurrentUser] = useState<UserContext | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
   const demoUsers = getDemoUsers();
+  const isInternalUpdateRef = useRef(false);
 
-  useEffect(() => {
-    // Load current user context
+  // Load user from localStorage
+  const loadUser = useCallback(() => {
     const user = getOrCreateUserContext();
     setCurrentUser(user);
+    return user;
   }, []);
+
+  useEffect(() => {
+    // Load initially
+    loadUser();
+    
+    // Listen for user context changes from other components (like Header)
+    // But NOT from this component itself (we update state directly)
+    const handleUserContextChange = () => {
+      // Skip if this is our own update
+      if (isInternalUpdateRef.current) {
+        isInternalUpdateRef.current = false;
+        return;
+      }
+      // Use setTimeout to ensure localStorage write has completed
+      setTimeout(() => {
+        loadUser();
+      }, 0);
+    };
+    
+    // Listen for custom event
+    window.addEventListener('ld-user-context-changed', handleUserContextChange);
+    
+    // Listen for storage events (cross-tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ld-user-context') {
+        loadUser();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('ld-user-context-changed', handleUserContextChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [loadUser]);
 
   const switchUser = async (user: UserContext) => {
     if (currentUser?.key === user.key || isSwitching) return; // Already selected or switching
@@ -30,12 +68,26 @@ export function UserContextSwitcher() {
     });
     
     setIsSwitching(true);
+    
+    // Save to localStorage FIRST (synchronously)
     setUserContext(user);
     
-    // Dispatch custom event for other components to react
-    window.dispatchEvent(new CustomEvent('ld-user-context-changed'));
+    // Update state IMMEDIATELY - use the user object directly, not a function
+    // This ensures React sees it as a new value and updates immediately
+    setCurrentUser({ ...user }); // Create new object reference to force update
     
-    // Re-identify with LaunchDarkly
+    console.log('✅ State updated to:', user.name, user.key);
+    
+    // Mark this as an internal update so our event listener doesn't overwrite it
+    isInternalUpdateRef.current = true;
+    
+    // Dispatch custom event for other components AFTER state update
+    // Use requestAnimationFrame to ensure DOM has updated
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent('ld-user-context-changed'));
+    });
+    
+    // Re-identify with LaunchDarkly (async, but don't block UI)
     if (ldClient) {
       const ldContext = {
         key: user.key,
@@ -53,32 +105,21 @@ export function UserContextSwitcher() {
       
       console.log('📤 Sending context to LaunchDarkly:', ldContext);
       
-      try {
-        await ldClient.identify(ldContext);
-        console.log('✅ User identified with LaunchDarkly');
-        
-        // Check flag value immediately after identify
-        const flagValue = ldClient.variation('show-premium-feature-demo', false);
-        console.log('🎯 Flag value after identify:', flagValue);
-        
-        // Wait a bit longer for flags to propagate
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Check flag value again
-        const flagValueAfter = ldClient.variation('show-premium-feature-demo', false);
-        console.log('🎯 Flag value after delay:', flagValueAfter);
-        
-        setCurrentUser(user);
-      } catch (error) {
-        console.error('❌ Failed to identify user:', error);
-        setCurrentUser(user);
-      }
+      // Don't await - let it run in background
+      ldClient.identify(ldContext)
+        .then(() => {
+          console.log('✅ User identified with LaunchDarkly');
+        })
+        .catch((error) => {
+          console.error('❌ Failed to identify user:', error);
+        })
+        .finally(() => {
+          setIsSwitching(false);
+        });
     } else {
       console.warn('⚠️ LaunchDarkly client not available');
-      setCurrentUser(user);
+      setIsSwitching(false);
     }
-    
-    setIsSwitching(false);
   };
 
   if (!currentUser) {
@@ -103,8 +144,8 @@ export function UserContextSwitcher() {
           "bg-background-tertiary p-4 rounded-lg text-sm transition-all duration-300",
           isSwitching && "opacity-50"
         )}>
-          <div className="font-medium">{currentUser.name}</div>
-          <div className="text-foreground-secondary text-xs mt-1">
+          <div className="font-medium" key={`name-${currentUser.key}`}>{currentUser.name}</div>
+          <div className="text-foreground-secondary text-xs mt-1" key={`details-${currentUser.key}`}>
             {currentUser.email} • {currentUser.role} • {currentUser.subscriptionTier}
             {currentUser.betaTester && " • Beta Tester"}
           </div>

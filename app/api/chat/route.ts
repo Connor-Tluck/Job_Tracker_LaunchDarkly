@@ -116,11 +116,26 @@ Remember: Job searching is stressful enough. Job Search OS eliminates the chaos 
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, userContext } = await request.json();
+    let requestBody;
+    try {
+      requestBody = await request.json();
+    } catch (jsonError: any) {
+      console.error('Failed to parse request JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body', details: jsonError?.message },
+        { status: 400 }
+      );
+    }
+    
+    const { messages, userContext } = requestBody;
 
     if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY is not set in environment variables');
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { 
+          error: 'OpenAI API key not configured',
+          details: 'Please add OPENAI_API_KEY to your .env.local file. LaunchDarkly AI Configs still require an OpenAI API key to make API calls.'
+        },
         { status: 500 }
       );
     }
@@ -139,7 +154,22 @@ export async function POST(request: NextRequest) {
     });
 
     // Get LaunchDarkly server client
-    const ldClient = await getLDServerClient();
+    let ldClient = null;
+    try {
+      ldClient = await getLDServerClient();
+      if (ldClient) {
+        console.log('LaunchDarkly server client initialized successfully');
+      } else {
+        console.warn('LaunchDarkly server client is null - will use fallback configuration');
+      }
+    } catch (ldInitError: any) {
+      console.error('Failed to initialize LaunchDarkly server client:', ldInitError);
+      console.error('LD Init error details:', {
+        message: ldInitError?.message,
+        stack: ldInitError?.stack,
+      });
+      // Continue with fallback configuration
+    }
     
     let model = 'gpt-4o-mini';
     let temperature = 0.7;
@@ -155,7 +185,7 @@ export async function POST(request: NextRequest) {
         // Get AI Config variation
         // Replace 'jobs-os-basic-chatbot' with your actual AI Config key from LaunchDarkly
         // AI Configs are accessed via the variation method and return a structured config object
-        const aiConfig = await ldClient.variation('jobs-os-basic-chatbot', ldContext, null);
+        const aiConfig = await Promise.resolve(ldClient.variation('jobs-os-basic-chatbot', ldContext, null));
         
         if (aiConfig && typeof aiConfig === 'object') {
           // AI Config returned as an object
@@ -232,8 +262,14 @@ export async function POST(request: NextRequest) {
             })),
           ];
         }
-      } catch (aiConfigError) {
+      } catch (aiConfigError: any) {
         console.error('Error getting AI Config from LaunchDarkly:', aiConfigError);
+        console.error('AI Config error details:', {
+          message: aiConfigError?.message,
+          stack: aiConfigError?.stack,
+          ldClient: ldClient ? 'exists' : 'null',
+          userContext: userContext ? 'exists' : 'null',
+        });
         // Fallback to default behavior
         openaiMessages = [
           {
@@ -281,11 +317,22 @@ export async function POST(request: NextRequest) {
       message: assistantMessage,
     });
   } catch (error: any) {
-    console.error('OpenAI API error:', error);
+    console.error('=== Chat API Error ===');
+    console.error('Error:', error);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+    console.error('Error name:', error?.name);
+    console.error('Error type:', typeof error);
+    if (error?.response) {
+      console.error('OpenAI API response error:', error.response);
+    }
+    console.error('=====================');
+    
     return NextResponse.json(
       {
         error: 'Failed to get response from AI',
-        details: error.message || 'Unknown error',
+        details: error?.message || 'Unknown error',
+        type: error?.name || 'UnknownError',
       },
       { status: 500 }
     );
