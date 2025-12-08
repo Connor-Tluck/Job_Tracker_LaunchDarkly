@@ -17,7 +17,7 @@ Start with the Assignment Docs page as your primary guide during the review proc
 ### Admin Examples Page (Visual Walkthrough)
 - **Route:** `/admin/examples`
 - **Purpose:** Step-by-step walkthroughs with images demonstrating key features and LaunchDarkly integrations
-- **Also Available:** The same content is available as `feature_walkthrough.md` in the repository root
+- **Also Available:** The same content is available as `FEATURE_WALKTHROUGH.md` in the repository root
 - **Suggested Use:** Review this page to see visual examples of feature flag behavior, targeting, AI Configs, and experimentation in action
 - **Access:** Navigate to `http://localhost:3000/admin/examples` after starting the application
 
@@ -33,7 +33,7 @@ Start with the Assignment Docs page as your primary guide during the review proc
 
 **Suggested Review Process:**
 1. Start with the **Assignment Docs page** (`/admin/assignment-satisfaction`) to understand requirements and implementation
-2. Review the **Admin Examples page** (`/admin/examples`) or `feature_walkthrough.md` to see visual walkthroughs of key features
+2. Review the **Admin Examples page** (`/admin/examples`) or `FEATURE_WALKTHROUGH.md` to see visual walkthroughs of key features
 3. Use the **Admin Control Panel** (`/admin`) to test features, switch users, and verify flag behavior
 4. Follow the testing instructions provided in the Assignment Docs page
 
@@ -288,7 +288,7 @@ If the CLI script fails to set up targeting rules, configure them manually in La
 
 **Note:** The chatbot uses LaunchDarkly AI Configs for prompt and model management, but still requires your OpenAI API key for actual API calls. Without this key, the chatbot will not function.
 
-**AI Configs Setup (Optional):** LaunchDarkly AI Configs are **optional** for basic chatbot functionality. If AI Configs are not configured in your LaunchDarkly account, the chatbot will use fallback defaults (friendly system prompt, `gpt-4o-mini` model). However, to demonstrate the AI Configs feature (e.g., grumpy chatbot for Beta Tester users), you'll need to set up AI Configs manually in the LaunchDarkly dashboard. See `feature_walkthrough.md` or `/admin/examples` for AI Configs setup instructions.
+**AI Configs Setup (Optional):** LaunchDarkly AI Configs are **optional** for basic chatbot functionality. If AI Configs are not configured in your LaunchDarkly account, the chatbot will use fallback defaults (friendly system prompt, `gpt-4o-mini` model). However, to demonstrate the AI Configs feature (e.g., grumpy chatbot for Beta Tester users), you'll need to set up AI Configs manually in the LaunchDarkly dashboard. See `FEATURE_WALKTHROUGH.md` or `/admin/examples` for AI Configs setup instructions.
 
 #### Step 7: Run the Development Server
 
