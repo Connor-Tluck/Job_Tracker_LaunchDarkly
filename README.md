@@ -4,15 +4,22 @@ A comprehensive job search management application converted to use LaunchDarkly'
 
 ---
 
-## For Reviewers: Important Pages
+## For Reviewers: Suggested Review Path
 
-**CRITICAL: Please use the Assignment Docs page as your primary guide during the review process.**
+We suggest starting with the Assignment Docs page as your primary guide during the review process.
 
-### Assignment Docs Page (Primary Review Guide)
+### Assignment Docs Page (Suggested Starting Point)
 - **Route:** `/admin/assignment-satisfaction`
 - **Purpose:** Comprehensive documentation of how the application satisfies LaunchDarkly technical exercise requirements
-- **Use This Page:** As your primary guide during the review process - it contains detailed explanations of all requirements, implementation details, and testing instructions
+- **Suggested Use:** This page contains detailed explanations of all requirements, implementation details, and testing instructions
 - **Access:** Navigate to `http://localhost:3000/admin/assignment-satisfaction` after starting the application
+
+### Admin Examples Page (Visual Walkthrough)
+- **Route:** `/admin/examples`
+- **Purpose:** Step-by-step walkthroughs with images demonstrating key features and LaunchDarkly integrations
+- **Also Available:** The same content is available as `feature_walkthrough.md` in the repository root
+- **Suggested Use:** Review this page to see visual examples of feature flag behavior, targeting, AI Configs, and experimentation in action
+- **Access:** Navigate to `http://localhost:3000/admin/examples` after starting the application
 
 ### Admin Control Panel
 - **Route:** `/admin`
@@ -24,10 +31,11 @@ A comprehensive job search management application converted to use LaunchDarkly'
   - Visual demonstration of flag-controlled features
 - **Access:** Navigate to `http://localhost:3000/admin` after starting the application
 
-**Review Process:**
+**Suggested Review Process:**
 1. Start with the **Assignment Docs page** (`/admin/assignment-satisfaction`) to understand requirements and implementation
-2. Use the **Admin Control Panel** (`/admin`) to test features, switch users, and verify flag behavior
-3. Follow the testing instructions provided in the Assignment Docs page
+2. Review the **Admin Examples page** (`/admin/examples`) or `feature_walkthrough.md` to see visual walkthroughs of key features
+3. Use the **Admin Control Panel** (`/admin`) to test features, switch users, and verify flag behavior
+4. Follow the testing instructions provided in the Assignment Docs page
 
 ---
 
