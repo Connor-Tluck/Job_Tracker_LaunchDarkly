@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { jobs, analyticsSummary, starStories } from "@/lib/mock-data";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,8 +17,24 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useMemo } from "react";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function Home() {
+  // Page access check
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_PAGE, true);
+  if (!canAccess) {
+    return notFound();
+  }
+
+  // Component visibility flags
+  const showHero = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_HERO, true);
+  const showMetrics = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_METRICS, true);
+  const showRecentJobs = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_RECENT_JOBS, true);
+  const showUpcomingActions = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_UPCOMING_ACTIONS, true);
+  const showQuickLinks = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_QUICK_LINKS, true);
+  const showFollowUpsAlert = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_FOLLOW_UPS_ALERT, true);
+
   const recentJobs = useMemo(() => jobs.slice(0, 5), []);
   const upcomingActions = analyticsSummary.upcomingActions.slice(0, 3);
   const responseRate = Math.round(
@@ -29,7 +46,8 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-3xl border border-border bg-gradient-to-br from-background-secondary to-background-tertiary p-8 lg:p-10">
+      {showHero && (
+        <section className="rounded-3xl border border-border bg-gradient-to-br from-background-secondary to-background-tertiary p-8 lg:p-10">
         <div className="max-w-3xl space-y-6">
           <p className="text-sm uppercase tracking-[0.4em] text-foreground-secondary">
             Job Search OS
@@ -56,139 +74,150 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          icon={FileText}
-          label="Applications"
-          value={jobs.length}
-          change="+3 this week"
-          trend="up"
-        />
-        <MetricCard
-          icon={CheckCircle2}
-          label="Response Rate"
-          value={`${responseRate}%`}
-          change={`${jobs.filter((j) => j.response === "Yes").length} responses`}
-        />
-        <MetricCard
-          icon={Star}
-          label="Active Interviews"
-          value={activeInterviews}
-          change="Phone screens + interviews"
-        />
-        <MetricCard
-          icon={Clock}
-          label="Follow-ups Due"
-          value={followUpsDue}
-          change="Action items pending"
-          trend={followUpsDue > 0 ? "alert" : undefined}
-        />
-      </section>
-
-      <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Recent Applications</h2>
-            <Link
-              href="/jobs"
-              className="text-sm text-primary hover:underline flex items-center gap-1"
-            >
-              View all <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {recentJobs.map((job) => (
-              <Card key={job.id} hover className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold">{job.company}</h3>
-                      <JobStatusBadge status={job.phase} />
-                    </div>
-                    <p className="text-sm text-foreground-secondary">{job.title}</p>
-                    <div className="flex items-center gap-4 text-xs text-foreground-secondary">
-                      <span>Applied {job.applicationDate}</span>
-                      {job.response === "Yes" && (
-                        <span className="text-success">✓ Responded</span>
-                      )}
-                      {job.nextStep && (
-                        <span className="text-warning">→ {job.nextStep}</span>
-                      )}
-                    </div>
-                  </div>
-                  <Link href={`/jobs/${job.id}`}>
-                    <Button variant="ghost" size="sm">
-                      Prep
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
+      {showMetrics && (
+        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            icon={FileText}
+            label="Applications"
+            value={jobs.length}
+            change="+3 this week"
+            trend="up"
+          />
+          <MetricCard
+            icon={CheckCircle2}
+            label="Response Rate"
+            value={`${responseRate}%`}
+            change={`${jobs.filter((j) => j.response === "Yes").length} responses`}
+          />
+          <MetricCard
+            icon={Star}
+            label="Active Interviews"
+            value={activeInterviews}
+            change="Phone screens + interviews"
+          />
+          <MetricCard
+            icon={Clock}
+            label="Follow-ups Due"
+            value={followUpsDue}
+            change="Action items pending"
+            trend={followUpsDue > 0 ? "alert" : undefined}
+          />
         </section>
+      )}
 
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Upcoming Actions</h2>
-            <Link
-              href="/analytics"
-              className="text-sm text-primary hover:underline flex items-center gap-1"
-            >
-              View all <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {upcomingActions.length > 0 ? (
-              upcomingActions.map((action, idx) => (
-                <Card key={idx} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{action.label}</p>
-                      <p className="text-xs text-foreground-secondary flex items-center gap-2">
-                        <Calendar className="w-3 h-3" />
-                        {action.date}
-                      </p>
+      {(showRecentJobs || showUpcomingActions) && (
+        <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+          {showRecentJobs && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Recent Applications</h2>
+                <Link
+                  href="/jobs"
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  View all <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {recentJobs.map((job) => (
+                  <Card key={job.id} hover className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold">{job.company}</h3>
+                          <JobStatusBadge status={job.phase} />
+                        </div>
+                        <p className="text-sm text-foreground-secondary">{job.title}</p>
+                        <div className="flex items-center gap-4 text-xs text-foreground-secondary">
+                          <span>Applied {job.applicationDate}</span>
+                          {job.response === "Yes" && (
+                            <span className="text-success">✓ Responded</span>
+                          )}
+                          {job.nextStep && (
+                            <span className="text-warning">→ {job.nextStep}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Link href={`/jobs/${job.id}`}>
+                        <Button variant="ghost" size="sm">
+                          Prep
+                        </Button>
+                      </Link>
                     </div>
-                    <Link href={`/jobs/${action.jobId}`}>
-                      <Button variant="ghost" size="xs">
-                        Open
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))
-            ) : (
-              <Card className="p-4 text-sm text-foreground-secondary">
-                No upcoming actions scheduled
-              </Card>
-            )}
-          </div>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {showUpcomingActions && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Upcoming Actions</h2>
+                <Link
+                  href="/analytics"
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  View all <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {upcomingActions.length > 0 ? (
+                  upcomingActions.map((action, idx) => (
+                    <Card key={idx} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{action.label}</p>
+                          <p className="text-xs text-foreground-secondary flex items-center gap-2">
+                            <Calendar className="w-3 h-3" />
+                            {action.date}
+                          </p>
+                        </div>
+                        <Link href={`/jobs/${action.jobId}`}>
+                          <Button variant="ghost" size="xs">
+                            Open
+                          </Button>
+                        </Link>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <Card className="p-4 text-sm text-foreground-secondary">
+                    No upcoming actions scheduled
+                  </Card>
+                )}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {showQuickLinks && (
+        <section className="grid gap-6 lg:grid-cols-3">
+          <QuickLinkCard
+            title="Job Tracker"
+            description="Sheets-style table with filters, status tracking, and quick prep links."
+            href="/jobs"
+            icon={FileText}
+          />
+          <QuickLinkCard
+            title="Master Prep"
+            description="Personal narrative, question banks, and reusable STAR stories."
+            href="/prep"
+            icon={Star}
+          />
+          <QuickLinkCard
+            title="Analytics Dashboard"
+            description="Response rates, pipeline velocity, and conversion trends."
+            href="/analytics"
+            icon={TrendingUp}
+          />
         </section>
-      </div>
+      )}
 
-      <section className="grid gap-6 lg:grid-cols-3">
-        <QuickLinkCard
-          title="Job Tracker"
-          description="Sheets-style table with filters, status tracking, and quick prep links."
-          href="/jobs"
-          icon={FileText}
-        />
-        <QuickLinkCard
-          title="Master Prep"
-          description="Personal narrative, question banks, and reusable STAR stories."
-          href="/prep"
-          icon={Star}
-        />
-        <QuickLinkCard
-          title="Analytics Dashboard"
-          description="Response rates, pipeline velocity, and conversion trends."
-          href="/analytics"
-          icon={TrendingUp}
-        />
-      </section>
-
-      {followUpsDue > 0 && (
+      {showFollowUpsAlert && followUpsDue > 0 && (
         <Card className="p-4 bg-warning/10 border-warning/20">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-warning mt-0.5" />

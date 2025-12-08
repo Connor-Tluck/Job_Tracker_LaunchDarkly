@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { jobs as initialJobs, Job } from "@/lib/mock-data";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +18,8 @@ import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
 import { CSVImportModal } from "@/components/jobs/CSVImportModal";
 import { EditableJobRow } from "@/components/jobs/EditableJobRow";
 import { cn } from "@/lib/utils";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 const statusFilters = [
   "All",
@@ -28,8 +31,15 @@ const statusFilters = [
 ] as const;
 
 export default function JobsPage() {
+  // All hooks must be called before any conditional returns
   const router = useRouter();
   const params = useSearchParams();
+  
+  // Feature flags
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_JOBS_PAGE, true);
+  const enableCSVImport = useFeatureFlag(FLAG_KEYS.ENABLE_CSV_IMPORT, true);
+  const enableTimelineView = useFeatureFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, true);
+
   const viewMode = params.get("view");
 
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
@@ -46,6 +56,11 @@ export default function JobsPage() {
       return matchesSearch && matchesStatus;
     });
   }, [jobs, search, status]);
+
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
 
   const appliedCount = jobs.length;
   const responseCount = jobs.filter((job) => job.response === "Yes").length;
@@ -69,16 +84,20 @@ export default function JobsPage() {
           >
             Manual Sync
           </Button>
-          <Button variant="primary" onClick={() => setIsImportOpen(true)}>
-            Import CSV
-          </Button>
-          <CSVImportModal
-            isOpen={isImportOpen}
-            onClose={() => setIsImportOpen(false)}
-            onImport={(importedJobs) => {
-              setJobs((prevJobs) => [...prevJobs, ...importedJobs]);
-            }}
-          />
+          {enableCSVImport && (
+            <>
+              <Button variant="primary" onClick={() => setIsImportOpen(true)}>
+                Import CSV
+              </Button>
+              <CSVImportModal
+                isOpen={isImportOpen}
+                onClose={() => setIsImportOpen(false)}
+                onImport={(importedJobs) => {
+                  setJobs((prevJobs) => [...prevJobs, ...importedJobs]);
+                }}
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -114,17 +133,19 @@ export default function JobsPage() {
               placeholder="Search company or job title"
               className="h-10 rounded-xl border border-border bg-background-secondary px-4 text-sm"
             />
-            <Link
-              href="/jobs?view=timeline"
-              className={cn(
-                "text-sm px-3 py-2 rounded-lg border transition-colors",
-                viewMode === "timeline"
-                  ? "bg-background-tertiary border-border"
-                  : "border-border text-foreground-secondary hover:text-foreground"
-              )}
-            >
-              Timeline
-            </Link>
+            {enableTimelineView && (
+              <Link
+                href="/jobs?view=timeline"
+                className={cn(
+                  "text-sm px-3 py-2 rounded-lg border transition-colors",
+                  viewMode === "timeline"
+                    ? "bg-background-tertiary border-border"
+                    : "border-border text-foreground-secondary hover:text-foreground"
+                )}
+              >
+                Timeline
+              </Link>
+            )}
           </div>
         </div>
 

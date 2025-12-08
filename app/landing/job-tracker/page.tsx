@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -18,8 +19,16 @@ import {
   Clock,
   Zap,
 } from "lucide-react";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function JobTrackerPage() {
+  // Page access check
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_LANDING_JOB_TRACKER, true);
+  if (!canAccess) {
+    return notFound();
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section - Problem/Solution Focus */}
@@ -83,7 +92,7 @@ export default function JobTrackerPage() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-danger mt-1">•</span>
-                      <span>Can't remember which company you already applied to</span>
+                      <span>Can&apos;t remember which company you already applied to</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-danger mt-1">•</span>

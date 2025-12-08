@@ -1,18 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { notFound } from "next/navigation";
 import { starStories as initialStories, StarStory } from "@/lib/mock-data";
 import { Button } from "@/components/ui/Button";
 import { StarStoryModal } from "@/components/star-stories/StarStoryModal";
 import { Card } from "@/components/ui/Card";
 import { Plus, Edit2, Grid3x3, List } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 const categories = ["All", "Enterprise", "Analytics", "AI", "Delivery"] as const;
 
 type ViewMode = "grid" | "list";
 
 export default function StarStoriesPage() {
+  // All hooks must be called before any conditional returns
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_STAR_STORIES_PAGE, true);
   const [stories, setStories] = useState<StarStory[]>(initialStories);
   const [category, setCategory] = useState<(typeof categories)[number]>("All");
   const [search, setSearch] = useState("");
@@ -36,6 +41,11 @@ export default function StarStoriesPage() {
       return matchesCategory && matchesSearch;
     });
   }, [category, search, stories]);
+
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
 
   const handleCreate = () => {
     setEditingStory(undefined);

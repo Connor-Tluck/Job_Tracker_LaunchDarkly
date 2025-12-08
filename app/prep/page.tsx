@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { notFound } from "next/navigation";
 import { generalDocs as initialGeneralDocs, starStories, GeneralDoc } from "@/lib/mock-data";
 import { Button } from "@/components/ui/Button";
 import {
@@ -15,6 +16,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 const initialInterviewQuestions = [
   "Tell me about a complex technical challenge you solved for a customer and how you approached it.",
@@ -38,6 +41,8 @@ const initialQuestionsForThem = [
 ];
 
 export default function PrepPage() {
+  // All hooks must be called before any conditional returns
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREP_PAGE, true);
   const [generalDocs, setGeneralDocs] = useState<GeneralDoc[]>(initialGeneralDocs);
   const [interviewQuestions, setInterviewQuestions] = useState<string[]>(initialInterviewQuestions);
   const [questionsForThem, setQuestionsForThem] = useState<string[]>(initialQuestionsForThem);
@@ -180,6 +185,11 @@ export default function PrepPage() {
       });
     };
   }, [sections.map((s) => s.id).join(",")]);
+
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">

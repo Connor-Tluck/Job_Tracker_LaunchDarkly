@@ -65,6 +65,7 @@ Job Tracker helps you stay organized throughout your job search by providing:
 - **Tailwind CSS** - Utility-first styling
 - **Chart.js** - Data visualization
 - **Lucide React** - Icon library
+- **LaunchDarkly** - Feature flag management with 30+ flags
 
 ## Getting Started
 
@@ -76,8 +77,8 @@ Job Tracker helps you stay organized throughout your job search by providing:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/Connor-Tluck/Job_Tracker.git
-cd Job_Tracker
+git clone https://github.com/Connor-Tluck/Job_Tracker_LaunchDarkly.git
+cd Job_Tracker_LaunchDarkly
 ```
 
 2. Install dependencies:
@@ -85,12 +86,53 @@ cd Job_Tracker
 npm install
 ```
 
-3. Run the development server:
+3. Set up environment variables:
+   - Copy `env.template` to `.env.local`
+   - Add your LaunchDarkly Client-side ID:
+   ```bash
+   NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID=your_launchdarkly_client_id_here
+   ```
+   - Get your Client-side ID from [LaunchDarkly Project Settings](https://app.launchdarkly.com/settings/projects)
+
+4. Run the development server:
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### LaunchDarkly Setup
+
+This application uses LaunchDarkly for feature flag management with **30 feature flags** controlling page access, UI components, and feature toggles.
+
+1. **Create a LaunchDarkly Account** (if you don't have one):
+   - Sign up at [launchdarkly.com](https://launchdarkly.com)
+   - Create a new project or use an existing one
+
+2. **Get Your Client-side ID**:
+   - Navigate to Project Settings in LaunchDarkly
+   - Copy your Client-side ID
+   - Add it to `.env.local` as `NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID`
+
+3. **Create Feature Flags** (Choose one method):
+   
+   **Option A: Using CLI (Recommended - Fastest)**
+   - Install LaunchDarkly CLI: `brew install launchdarkly/tap/ldcli` (or see [LAUNCHDARKLY_CLI_SETUP.md](./LAUNCHDARKLY_CLI_SETUP.md))
+   - Authenticate: `ldcli login`
+   - Import all flags: `npm run ld:import -- --project YOUR_PROJECT_KEY`
+   - See [LAUNCHDARKLY_CLI_SETUP.md](./LAUNCHDARKLY_CLI_SETUP.md) for detailed instructions
+   
+   **Option B: Manual Creation**
+   - All 30 flags are documented in `LAUNCHDARKLY_FLAGS.md`
+   - Create flags in LaunchDarkly dashboard using the keys from `launchdarkly/flags.json`
+   - All flags default to `true` (ON) - you can toggle them in LaunchDarkly
+
+4. **Admin Dashboard**:
+   - Access the admin dashboard at `/admin` (if `show-admin-page` flag is enabled)
+   - View all flags, their status, and metadata in real-time
+   - The admin button appears in red in the sidebar when enabled
+
+For detailed flag documentation, see [LAUNCHDARKLY_FLAGS.md](./LAUNCHDARKLY_FLAGS.md).
 
 ## Project Structure
 

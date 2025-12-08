@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { notFound } from "next/navigation";
 import { prepDocs as initialPrepDocs, PrepDoc, jobs } from "@/lib/mock-data";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Plus, Edit2, Search, Building2 } from "lucide-react";
 import Link from "next/link";
 import { PrepDocModal } from "@/components/prep/PrepDocModal";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function CompanyPrepListPage() {
+  // All hooks must be called before any conditional returns
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_COMPANY_PREP_PAGE, true);
   const [prepDocs, setPrepDocs] = useState<Record<string, PrepDoc>>(initialPrepDocs);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +46,11 @@ export default function CompanyPrepListPage() {
       };
     });
   }, [prepDocs, search]);
+
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
 
   const handleCreate = () => {
     setEditingDoc(undefined);

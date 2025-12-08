@@ -17,18 +17,26 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Edit2, Check, X, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function JobDetailPage() {
+  // All hooks must be called before any conditional returns
   const params = useParams();
   const jobId = params?.jobId as string;
+  
+  // Component visibility flags
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_JOB_DETAIL_PAGE, true);
+  const showTimeline = useFeatureFlag(FLAG_KEYS.SHOW_JOB_TIMELINE_SECTION, true);
+  const showPrepChecklist = useFeatureFlag(FLAG_KEYS.SHOW_JOB_PREP_CHECKLIST, true);
+  const showStarStories = useFeatureFlag(FLAG_KEYS.SHOW_JOB_STAR_STORIES, true);
+  const showMetrics = useFeatureFlag(FLAG_KEYS.SHOW_JOB_METRICS_CARDS, true);
+  const enableInlineEditing = useFeatureFlag(FLAG_KEYS.ENABLE_INLINE_EDITING, true);
+
   const initialJob = initialJobs.find((entry) => entry.id === jobId);
 
-  if (!initialJob) {
-    return notFound();
-  }
-
-  const [job, setJob] = useState<Job>(initialJob);
-  const [prepDoc, setPrepDoc] = useState<PrepDoc | undefined>(initialPrepDocs[job.prepDocId]);
+  const [job, setJob] = useState<Job | null>(initialJob || null);
+  const [prepDoc, setPrepDoc] = useState<PrepDoc | undefined>(initialJob ? initialPrepDocs[initialJob.prepDocId] : undefined);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [editingTimelineIndex, setEditingTimelineIndex] = useState<number | null>(null);
@@ -36,7 +44,16 @@ export default function JobDetailPage() {
   const [editingPrepField, setEditingPrepField] = useState<string | null>(null);
   const [editingPrepValue, setEditingPrepValue] = useState<string | string[]>("");
 
-  const relatedStories = starStories.filter((story) => story.tags.some((tag) => job.tags.includes(tag)));
+  // Conditional returns after all hooks
+  if (!initialJob || !job) {
+    return notFound();
+  }
+
+  if (!canAccess) {
+    return notFound();
+  }
+
+  const relatedStories = job ? starStories.filter((story) => story.tags.some((tag) => job.tags.includes(tag))) : [];
 
   const startEdit = (field: string, currentValue: string) => {
     setEditingField(field);
@@ -230,13 +247,15 @@ export default function JobDetailPage() {
     return (
       <div className={cn("group relative flex items-center gap-2", className)}>
         {children || value || placeholder || "—"}
-        <button
-          onClick={() => startEdit(field, value || "")}
-          className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-background-tertiary rounded-lg transition-opacity"
-          title="Click to edit"
-        >
-          <Edit2 className="w-4 h-4 text-foreground-secondary" />
-        </button>
+        {enableInlineEditing && (
+          <button
+            onClick={() => startEdit(field, value || "")}
+            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-background-tertiary rounded-lg transition-opacity"
+            title="Click to edit"
+          >
+            <Edit2 className="w-4 h-4 text-foreground-secondary" />
+          </button>
+        )}
       </div>
     );
   };
@@ -441,31 +460,34 @@ export default function JobDetailPage() {
       </div>
 
       {/* Overview Metrics */}
-      <section className="grid gap-4 lg:grid-cols-4">
-        <MetricCard label="Days since apply" value={job.metrics.daysSinceApply} />
-        <MetricCard label="Touchpoints" value={job.metrics.touchpoints} />
-        <MetricCard label="Confidence" value={`${job.metrics.confidence}%`} />
-        <MetricCard label="Response" value={job.response} />
-      </section>
+      {showMetrics && (
+        <section className="grid gap-4 lg:grid-cols-4">
+          <MetricCard label="Days since apply" value={job.metrics.daysSinceApply} />
+          <MetricCard label="Touchpoints" value={job.metrics.touchpoints} />
+          <MetricCard label="Confidence" value={`${job.metrics.confidence}%`} />
+          <MetricCard label="Response" value={job.response} />
+        </section>
+      )}
 
       {/* Main Content - Two Column Layout */}
       <div className="grid gap-8 lg:grid-cols-[2fr,1fr]">
         {/* Left Column - Timeline and Prep Content */}
         <div className="space-y-8">
           {/* Timeline Section */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Timeline</h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setNewTimelineEvent({ date: "", label: "" })}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add update
-              </Button>
-            </div>
-            <Card className="p-6 space-y-4">
+          {showTimeline && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Timeline</h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setNewTimelineEvent({ date: "", label: "" })}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add update
+                </Button>
+              </div>
+              <Card className="p-6 space-y-4">
               {newTimelineEvent && (
                 <div className="p-4 rounded-lg border-2 border-primary bg-background-secondary space-y-3">
                   <input
@@ -567,6 +589,7 @@ export default function JobDetailPage() {
               </div>
             </Card>
           </section>
+          )}
 
           {/* Company Overview */}
           <section>
@@ -635,49 +658,53 @@ export default function JobDetailPage() {
         {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
           {/* Prep Checklist */}
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Prep Checklist</h2>
-            <Card className="p-6">
-              <EditableList
-                field="prepChecklist"
-                items={prepDoc?.prepChecklist || []}
-                title="Checklist"
-                placeholder="Add prep items..."
-              />
-            </Card>
-          </section>
+          {showPrepChecklist && (
+            <section>
+              <h2 className="text-lg font-semibold mb-3">Prep Checklist</h2>
+              <Card className="p-6">
+                <EditableList
+                  field="prepChecklist"
+                  items={prepDoc?.prepChecklist || []}
+                  title="Checklist"
+                  placeholder="Add prep items..."
+                />
+              </Card>
+            </section>
+          )}
 
           {/* Tailored Stories */}
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Tailored Stories</h2>
-            <Card className="p-6 space-y-4">
-              {relatedStories.length > 0 ? (
-                relatedStories.map((story) => (
-                  <div key={story.id} className="rounded-lg border border-border-subtle p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold text-sm">{story.title}</p>
-                      <Link href="/star-stories" className="text-xs text-primary hover:underline">
-                        View →
-                      </Link>
+          {showStarStories && (
+            <section>
+              <h2 className="text-lg font-semibold mb-3">Tailored Stories</h2>
+              <Card className="p-6 space-y-4">
+                {relatedStories.length > 0 ? (
+                  relatedStories.map((story) => (
+                    <div key={story.id} className="rounded-lg border border-border-subtle p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-sm">{story.title}</p>
+                        <Link href="/star-stories" className="text-xs text-primary hover:underline">
+                          View →
+                        </Link>
+                      </div>
+                      <p className="text-xs text-foreground-secondary line-clamp-2">{story.result}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {story.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={`${story.id}-${tag}`}
+                            className="text-[10px] uppercase tracking-wide text-foreground-secondary bg-background-tertiary px-2 py-1 rounded-full"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <p className="text-xs text-foreground-secondary line-clamp-2">{story.result}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {story.tags.slice(0, 3).map((tag) => (
-                        <span
-                          key={`${story.id}-${tag}`}
-                          className="text-[10px] uppercase tracking-wide text-foreground-secondary bg-background-tertiary px-2 py-1 rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-foreground-secondary">No mapped stories yet.</p>
-              )}
-            </Card>
-          </section>
+                  ))
+                ) : (
+                  <p className="text-sm text-foreground-secondary">No mapped stories yet.</p>
+                )}
+              </Card>
+            </section>
+          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,8 +18,16 @@ import {
   Lightbulb,
   ArrowUpRight,
 } from "lucide-react";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function AnalyticsPage() {
+  // Page access check
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_LANDING_ANALYTICS, true);
+  if (!canAccess) {
+    return notFound();
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section - Data/Insights Focus */}
@@ -42,9 +51,9 @@ export default function AnalyticsPage() {
                 <span>Data-Driven Insights</span>
               </div>
               <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                Know What's Working
+                Know What&apos;s Working
                 <br />
-                <span className="text-primary">Optimize What's Not</span>
+                <span className="text-primary">Optimize What&apos;s Not</span>
               </h1>
               <p className="text-xl text-foreground-secondary max-w-3xl mx-auto leading-relaxed">
                 Stop guessing. See exactly which applications get responses, how long each stage
@@ -352,7 +361,7 @@ function InsightCard({
       <div className="pt-4 border-t border-border">
         <div className="flex items-start gap-2">
           <Lightbulb className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-foreground-secondary italic">"{insight}"</p>
+          <p className="text-sm text-foreground-secondary italic">&quot;{insight}&quot;</p>
         </div>
       </div>
     </Card>

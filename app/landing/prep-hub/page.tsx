@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,8 +18,16 @@ import {
   BookOpen,
   Lightbulb,
 } from "lucide-react";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function PrepHubPage() {
+  // Page access check
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_LANDING_PREP_HUB, true);
+  if (!canAccess) {
+    return notFound();
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section - Confidence Focus */}

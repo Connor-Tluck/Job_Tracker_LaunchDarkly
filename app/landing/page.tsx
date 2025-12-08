@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,8 +18,16 @@ import {
   Shield,
   Users,
 } from "lucide-react";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function LandingPage() {
+  // Page access check
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_LANDING_PAGE, true);
+  if (!canAccess) {
+    return notFound();
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}

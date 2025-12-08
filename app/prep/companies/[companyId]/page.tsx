@@ -8,12 +8,20 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { PrepDocModal } from "@/components/prep/PrepDocModal";
 import { cn } from "@/lib/utils";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 
 export default function CompanyPrepDetailPage({
   params,
 }: {
   params: { companyId: string };
 }) {
+  // Page access check
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_COMPANY_DETAIL_PAGE, true);
+  if (!canAccess) {
+    return notFound();
+  }
+
   const [prepDocs, setPrepDocs] = useState<Record<string, PrepDoc>>(initialPrepDocs);
   const [isEditing, setIsEditing] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);

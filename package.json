@@ -6,11 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "ld:convert": "node scripts/convert-flags-for-cli.js",
+    "ld:import": "node scripts/import-flags.js",
+    "ld:turn-on": "node scripts/turn-on-flags.js"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.1.0",
-    "@supabase/supabase-js": "^2.39.0",
     "chart.js": "^4.4.0",
     "clsx": "^2.1.0",
     "launchdarkly-react-client-sdk": "^3.9.0",

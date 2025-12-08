@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Settings, HelpCircle, User } from "lucide-react";
-import { AuthButton } from "@/components/auth/AuthButton";
+import { Settings, HelpCircle } from "lucide-react";
 
 export function Header() {
   return (
@@ -45,7 +44,6 @@ export function Header() {
           <button className="p-2 text-foreground-secondary hover:text-foreground hover:bg-background-tertiary rounded-lg transition-colors">
             <HelpCircle className="w-5 h-5" />
           </button>
-          <AuthButton />
           <button className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium hover:bg-primary-hover transition-colors">
             C
           </button>
