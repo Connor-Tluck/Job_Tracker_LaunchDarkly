@@ -130,7 +130,30 @@ This configures:
 
 If CLI fails, configure manually in LaunchDarkly dashboard: Feature Flags → `show-premium-feature-demo` → Targeting
 
-#### Step 5: Run the Application
+#### Step 5: Set Up AI Configs (Manual - Required for Chatbot)
+
+**⚠️ IMPORTANT:** AI Configs cannot be automated via CLI and must be configured manually in the LaunchDarkly dashboard. **The chatbot will not work without this setup.**
+
+1. Navigate to LaunchDarkly dashboard → **AI Configs** → **Create AI Config**
+2. **AI Config Key:** `jobs-os-basic-chatbot`
+3. **Create two variations:**
+   - **Variation 1:** `standard_open_ai` (default)
+     - System prompt: Friendly, helpful customer support bot (see `app/api/chat/route.ts` for fallback prompt)
+     - Model: `gpt-4o-mini` (or your preferred model)
+     - Temperature: `0.7`
+     - Max tokens: `1000`
+   - **Variation 2:** `combative_open_ai`
+     - System prompt: Grumpy, sarcastic tone (e.g., "Oh great, another question...")
+     - Model: `gpt-4o-mini`
+     - Temperature: `0.9`
+     - Max tokens: `1000`
+4. **Configure targeting:**
+   - Set default variation to `standard_open_ai`
+   - Add individual targeting: `user-001` (Beta Tester) → `combative_open_ai`
+
+**Note:** Without AI Configs, the chatbot will use a fallback prompt but won't demonstrate LaunchDarkly AI Configs functionality. See `feature_walkthrough.md` or `/admin/examples` for detailed setup instructions with screenshots.
+
+#### Step 6: Run the Application
 
 ```bash
 npm run dev
