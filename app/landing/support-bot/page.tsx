@@ -7,12 +7,13 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { MessageCircle, Send, Bot, User, Sparkles } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useLDClient, useFlags } from "launchdarkly-react-client-sdk";
+import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { trackEvent } from "@/lib/launchdarkly/tracking";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 interface Message {
   id: string;
@@ -25,8 +26,8 @@ export default function SupportBotPage() {
   // ALL HOOKS MUST BE CALLED FIRST - before any conditional returns
   const ldClient = useLDClient();
   const userContext = getOrCreateUserContext();
-  const flags = useFlags();
-  const [hasCheckedFlags, setHasCheckedFlags] = useState(false);
+  const flagsReady = useFlagsReady();
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO, false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -41,31 +42,12 @@ export default function SupportBotPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
 
-  // Check if flag exists in flags object (means flags are loaded)
-  const flagKey = FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
-  const flagExists = flagKey in flags;
-  const flagValue = flags[flagKey];
-
-  // Wait a moment for flags to load, then check access
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasCheckedFlags(true);
-    }, 500); // Give flags time to load
-    
-    return () => clearTimeout(timer);
-  }, []);
-
   // Track page view for experiment
   useEffect(() => {
-    if (hasCheckedFlags) {
-      const isPremiumOrBeta = userContext.subscriptionTier === 'premium' || userContext.betaTester || userContext.role === 'beta-tester';
-      const canAccess = flagExists && flagValue === false && !isPremiumOrBeta ? false : true;
-      
-      if (canAccess) {
-        trackEvent(ldClient, userContext, "support-bot-page-view");
-      }
+    if (flagsReady && canAccess && ldClient) {
+      trackEvent(ldClient, userContext, "support-bot-page-view");
     }
-  }, [ldClient, userContext, hasCheckedFlags, flagExists, flagValue]);
+  }, [ldClient, userContext, flagsReady, canAccess]);
 
   const scrollToBottom = (smooth = true) => {
     if (!messagesContainerRef.current || !shouldAutoScrollRef.current) return;
@@ -101,20 +83,8 @@ export default function SupportBotPage() {
     }
   }, [messages, isLoading]);
 
-  // For reviewers: Allow access by default for testing/demo purposes
-  // The flag check is for demonstration - in a real scenario, this would be controlled by LaunchDarkly targeting
-  const isPremiumOrBeta = userContext.subscriptionTier === 'premium' || userContext.betaTester || userContext.role === 'beta-tester';
-  
-  // Default to allowing access for reviewers - only block if explicitly false and user shouldn't have access
-  let canAccess = true;
-  if (flagExists && flagValue === false && !isPremiumOrBeta) {
-    // Flag is false and user doesn't match premium/beta criteria
-    // But for reviewers, we'll still allow access with a note
-    canAccess = true; // Allow for testing
-  }
-
   // Show loading state while waiting for flags to initialize
-  if (!hasCheckedFlags) {
+  if (!flagsReady) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -123,6 +93,12 @@ export default function SupportBotPage() {
         </div>
       </div>
     );
+  }
+
+  // Check access - if flag is false, user doesn't have access (404)
+  // The flag value already reflects LaunchDarkly targeting (individual or rule-based)
+  if (!canAccess) {
+    return notFound();
   }
 
   const handleSend = async () => {

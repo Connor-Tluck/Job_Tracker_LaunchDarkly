@@ -16,6 +16,7 @@ import {
   FileText,
   Briefcase,
   Home,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -275,14 +276,22 @@ export function Sidebar() {
                   <span>Assignment Docs</span>
                 </Link>
               )}
+              <Link
+                href="/admin/examples"
+                className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                  pathname === "/admin/examples"
+                    ? "bg-danger/10 text-danger border border-danger/20"
+                    : "text-danger hover:bg-danger/10 hover:text-danger border border-danger/20"
+                )}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span>Examples</span>
+              </Link>
             </div>
           </div>
         )}
       </nav>
-
-      <div className="p-4 border-t border-border text-[11px] text-foreground-secondary leading-relaxed">
-        <p>Next: wire up Google Sheets + Drive sync with local cache.</p>
-      </div>
     </aside>
   );
 }
