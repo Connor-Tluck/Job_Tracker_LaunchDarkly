@@ -152,17 +152,45 @@ After the import completes, review the log file in the `logs/` directory to veri
 
 If any flags failed to import or enable, you can manually create or enable them in the LaunchDarkly dashboard.
 
-### Step 8: Configure LaunchDarkly AI Configs (For Chatbot)
+### Step 8: Import LaunchDarkly AI Configs (For Chatbot)
 
-The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model management. **You must configure AI Configs in your LaunchDarkly project** for the chatbot to work properly.
+The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model management. **You can import AI Configs from the original project** to set up the chatbot automatically.
 
-1. **Navigate to your LaunchDarkly project → Feature Flags**
-2. **Find the flag that controls the chatbot** (typically `show-premium-feature-demo` or similar)
-3. **Configure AI Configs in the flag settings:**
-   - Define prompts for different user segments
-   - Configure model behavior (e.g., friendly vs. grumpy chatbot)
-   - Set up targeting rules for different AI Config variations
-4. **See the Assignment Docs page** (`/admin/assignment-satisfaction`) or Examples page (`/admin/examples`) for detailed setup instructions
+**Option A: Import from Export File (Recommended)**
+
+If you have an AI Config export file (`launchdarkly-ai-configs-export.json`), import it:
+
+```bash
+node scripts/import-ai-configs.js --project YOUR_PROJECT_KEY --export-file launchdarkly-ai-configs-export.json --environment production
+```
+
+**Option B: Export from Original Project First**
+
+If you need to export AI Configs from the original project first:
+
+```bash
+# Export AI Configs from original project
+node scripts/export-ai-configs.js --project ORIGINAL_PROJECT_KEY --output launchdarkly-ai-configs-export.json
+
+# Then import to new project
+node scripts/import-ai-configs.js --project YOUR_PROJECT_KEY --export-file launchdarkly-ai-configs-export.json --environment production
+```
+
+**What gets imported:**
+- AI Config structure (key, name, mode)
+- All variations with their prompts and model configurations
+- Note: Targeting rules need to be configured manually in the LaunchDarkly dashboard (the export file contains targeting information for reference)
+
+**Option C: Manual Configuration**
+
+If you prefer to configure manually:
+1. **Navigate to your LaunchDarkly project → AI Configs**
+2. **Create a new AI Config** named `jobs-os-basic-chatbot`
+3. **Configure variations:**
+   - `standard_open_ai` (friendly chatbot)
+   - `combative_open_ai` (grumpy chatbot)
+4. **Set up targeting rules** to serve different variations to different users
+5. **See the Assignment Docs page** (`/admin/assignment-satisfaction`) or Examples page (`/admin/examples`) for detailed setup instructions
 
 **Without AI Configs configured:** The chatbot may return errors or not function as expected.
 
