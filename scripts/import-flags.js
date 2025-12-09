@@ -292,8 +292,8 @@ function resetRateLimitCounter() {
       while (retryCount <= maxRetries && !enabled) {
         try {
           execSync(
-            `ldcli flags turn-on ${flagKey} --project ${projectKey} --environment ${environmentKey}`,
-            { stdio: 'pipe' }
+            `ldcli flags toggle-on --flag ${flagKey} --project ${projectKey} --environment ${environmentKey}`,
+            { stdio: 'pipe', shell: true }
           );
           log(`✅ Enabled: ${flagKey}`);
           importResults.flagsEnabled.push({ key: flagKey });
