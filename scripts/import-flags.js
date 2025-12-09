@@ -5,6 +5,8 @@
  * 
  * This script uses the LaunchDarkly CLI to import all flags from flags-cli-format.json
  * Optionally applies targeting rules from an exported JSON file
+ * Automatically enables all flags in production after import
+ * Generates a detailed log file with import results
  * 
  * Usage:
  *   node scripts/import-flags.js --project YOUR_PROJECT_KEY [--environment ENV_KEY] [--targeting-export EXPORT_FILE.json]
@@ -44,6 +46,47 @@ if (!environmentKey) {
   environmentKey = 'production';
 }
 
+// Initialize logging
+const logDir = path.join(__dirname, '..', 'logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+
+const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+const logFile = path.join(logDir, `import-${timestamp}.log`);
+const logStream = fs.createWriteStream(logFile, { flags: 'a' });
+
+function log(message, toConsole = true) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}\n`;
+  logStream.write(logMessage);
+  if (toConsole) {
+    console.log(message);
+  }
+}
+
+function logError(message, toConsole = true) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ERROR: ${message}\n`;
+  logStream.write(logMessage);
+  if (toConsole) {
+    console.error(message);
+  }
+}
+
+// Track import results
+const importResults = {
+  flagsCreated: [],
+  flagsSkipped: [],
+  flagsFailed: [],
+  flagsEnabled: [],
+  flagsEnableFailed: [],
+  targetingApplied: [],
+  targetingFailed: [],
+  startTime: new Date(),
+  endTime: null
+};
+
 // Load targeting export if provided
 let targetingData = null;
 if (targetingExportFile) {
@@ -52,15 +95,17 @@ if (targetingExportFile) {
     : path.join(__dirname, '..', targetingExportFile);
   
   if (!fs.existsSync(exportPath)) {
+    logError(`Targeting export file not found: ${exportPath}`);
     console.error(`❌ Error: Targeting export file not found: ${exportPath}`);
     process.exit(1);
   }
   
   try {
     targetingData = JSON.parse(fs.readFileSync(exportPath, 'utf8'));
-    console.log(`📋 Loaded targeting data from: ${targetingExportFile}`);
-    console.log(`   Found ${targetingData.flags?.length || 0} flags with targeting configurations\n`);
+    log(`📋 Loaded targeting data from: ${targetingExportFile}`);
+    log(`   Found ${targetingData.flags?.length || 0} flags with targeting configurations\n`);
   } catch (error) {
+    logError(`Error reading targeting export file: ${error.message}`);
     console.error(`❌ Error reading targeting export file: ${error.message}`);
     process.exit(1);
   }
@@ -70,6 +115,7 @@ if (targetingExportFile) {
 try {
   execSync('ldcli --version', { stdio: 'ignore' });
 } catch (error) {
+  logError('LaunchDarkly CLI (ldcli) is not installed');
   console.error('❌ Error: LaunchDarkly CLI (ldcli) is not installed');
   console.error('Install it from: https://docs.launchdarkly.com/home/getting-started/ldcli-commands');
   process.exit(1);
@@ -78,11 +124,12 @@ try {
 // Check if flags-cli-format.json exists, if not convert it
 const flagsFile = path.join(__dirname, '../launchdarkly/flags-cli-format.json');
 if (!fs.existsSync(flagsFile)) {
-  console.log('📦 Converting flags to CLI format...');
+  log('📦 Converting flags to CLI format...');
   require('./convert-flags-for-cli.js');
 }
 
 if (!fs.existsSync(flagsFile)) {
+  logError(`${flagsFile} not found`);
   console.error(`❌ Error: ${flagsFile} not found`);
   process.exit(1);
 }
@@ -90,179 +137,356 @@ if (!fs.existsSync(flagsFile)) {
 // Read flags
 const flags = JSON.parse(fs.readFileSync(flagsFile, 'utf8'));
 
-console.log('🚀 Importing flags to LaunchDarkly...');
-console.log(`📁 Project: ${projectKey}`);
-if (environmentKey) {
-  console.log(`🌍 Environment: ${environmentKey}`);
-}
-console.log(`📊 Found ${flags.length} flags to import\n`);
-
-let successCount = 0;
-let failedCount = 0;
+log('🚀 Importing flags to LaunchDarkly...');
+log(`📁 Project: ${projectKey}`);
+log(`🌍 Environment: ${environmentKey}`);
+log(`📊 Found ${flags.length} flags to import\n`);
+log(`📝 Logging to: ${logFile}\n`);
 
 // Helper function to sleep/delay
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Rate limiting with exponential backoff
+let consecutiveRateLimits = 0;
+const BASE_DELAY = 2000; // 2 seconds base delay
+const MAX_DELAY = 10000; // 10 seconds max delay
+
+async function handleRateLimit() {
+  consecutiveRateLimits++;
+  const delay = Math.min(BASE_DELAY * Math.pow(2, consecutiveRateLimits - 1), MAX_DELAY);
+  log(`⏸️  Rate limited (attempt ${consecutiveRateLimits}) - waiting ${delay/1000}s before continuing...`);
+  await sleep(delay);
+}
+
+function resetRateLimitCounter() {
+  consecutiveRateLimits = 0;
+}
+
 // Import each flag (using async/await for delays)
 (async () => {
-  for (let i = 0; i < flags.length; i++) {
-    const flag = flags[i];
-    const flagKey = flag.key;
-    const flagName = flag.name;
+  try {
+    // Step 1: Create flags
+    log('\n=== STEP 1: Creating Flags ===\n');
     
-    console.log(`⏳ Creating flag: ${flagKey} (${flagName})...`);
-    
-    // Build flag definition object for CLI (outside try block for retry access)
-    const flagDefinition = {
-      key: flagKey,
-      name: flagName,
-      description: flag.description,
-      variations: flag.variations,
-      defaults: flag.defaults,
-      clientSideAvailability: flag.clientSideAvailability,
-      tags: flag.tags,
-      temporary: flag.temporary || false
-    };
-    
-    try {
-      // LaunchDarkly CLI expects JSON data via -d flag
-      // Escape JSON properly for shell command
-      const flagJson = JSON.stringify(flagDefinition).replace(/"/g, '\\"');
-      const cmd = `ldcli flags create --project ${projectKey} -d "${flagJson}"`;
+    for (let i = 0; i < flags.length; i++) {
+      const flag = flags[i];
+      const flagKey = flag.key;
+      const flagName = flag.name;
       
-      execSync(cmd, { stdio: 'pipe', shell: true });
-      console.log(`✅ Created: ${flagKey}`);
-      successCount++;
+      log(`⏳ Creating flag: ${flagKey} (${flagName})...`);
       
-      // If environment is specified, set the flag variation for that environment
-      if (environmentKey && flag.defaults.onVariation === 0) {
+      // Build flag definition object for CLI
+      const flagDefinition = {
+        key: flagKey,
+        name: flagName,
+        description: flag.description,
+        variations: flag.variations,
+        defaults: flag.defaults,
+        clientSideAvailability: flag.clientSideAvailability,
+        tags: flag.tags,
+        temporary: flag.temporary || false
+      };
+      
+      let retryCount = 0;
+      const maxRetries = 3;
+      let created = false;
+      
+      while (retryCount <= maxRetries && !created) {
+        try {
+          // LaunchDarkly CLI expects JSON data via -d flag
+          const flagJson = JSON.stringify(flagDefinition).replace(/"/g, '\\"');
+          const cmd = `ldcli flags create --project ${projectKey} -d "${flagJson}"`;
+          
+          execSync(cmd, { stdio: 'pipe', shell: true });
+          log(`✅ Created: ${flagKey}`);
+          importResults.flagsCreated.push({ key: flagKey, name: flagName });
+          created = true;
+          resetRateLimitCounter();
+          
+          // Add delay between requests to avoid rate limits (longer delay)
+          if (i < flags.length - 1) {
+            await sleep(1500); // 1.5 second delay between requests
+          }
+        } catch (error) {
+          const errorMsg = error.message || error.toString();
+          
+          // Check if flag already exists
+          if (errorMsg.includes('already exists') || errorMsg.includes('409')) {
+            log(`⚠️  Flag ${flagKey} already exists (skipping)`);
+            importResults.flagsSkipped.push({ key: flagKey, name: flagName, reason: 'already exists' });
+            created = true;
+            resetRateLimitCounter();
+          } else if (errorMsg.includes('rate_limited') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+            if (retryCount < maxRetries) {
+              await handleRateLimit();
+              retryCount++;
+            } else {
+              logError(`Failed to create ${flagKey} after ${maxRetries} retries due to rate limiting`);
+              importResults.flagsFailed.push({ key: flagKey, name: flagName, reason: 'rate limit exceeded' });
+              created = true; // Give up on this flag
+            }
+          } else if (errorMsg.includes('forbidden') || errorMsg.includes('Access to the requested resource was denied')) {
+            logError(`Permission denied for ${flagKey}`);
+            logError(`   Your access token may not have Writer/Admin permissions.`);
+            importResults.flagsFailed.push({ key: flagKey, name: flagName, reason: 'permission denied' });
+            created = true;
+          } else if (errorMsg.includes('Tags are invalid') || errorMsg.includes('invalid_request')) {
+            logError(`Invalid tag format for ${flagKey}: ${errorMsg}`);
+            logError(`   Tags: ${JSON.stringify(flag.tags)}`);
+            importResults.flagsFailed.push({ key: flagKey, name: flagName, reason: 'invalid tags' });
+            created = true;
+          } else {
+            if (retryCount < maxRetries) {
+              log(`⚠️  Error creating ${flagKey}, retrying... (${retryCount + 1}/${maxRetries})`);
+              await sleep(1000);
+              retryCount++;
+            } else {
+              logError(`Failed to create ${flagKey}: ${errorMsg}`);
+              importResults.flagsFailed.push({ key: flagKey, name: flagName, reason: errorMsg });
+              created = true;
+            }
+          }
+        }
+      }
+      
+      log('');
+    }
+
+    log('\n✨ Flag creation complete!');
+    log(`✅ Successfully created: ${importResults.flagsCreated.length} flags`);
+    log(`⚠️  Skipped (already exists): ${importResults.flagsSkipped.length} flags`);
+    if (importResults.flagsFailed.length > 0) {
+      log(`❌ Failed: ${importResults.flagsFailed.length} flags`);
+    }
+
+    // Step 2: Enable all flags in production
+    log('\n=== STEP 2: Enabling Flags in Production ===\n');
+    
+    const flagsToEnable = [...importResults.flagsCreated, ...importResults.flagsSkipped];
+    log(`Attempting to enable ${flagsToEnable.length} flags in ${environmentKey}...\n`);
+    
+    for (let i = 0; i < flagsToEnable.length; i++) {
+      const flag = flagsToEnable[i];
+      const flagKey = flag.key;
+      
+      let retryCount = 0;
+      const maxRetries = 3;
+      let enabled = false;
+      
+      while (retryCount <= maxRetries && !enabled) {
         try {
           execSync(
             `ldcli flags turn-on ${flagKey} --project ${projectKey} --environment ${environmentKey}`,
             { stdio: 'pipe' }
           );
-          console.log(`   Set default to ON for environment: ${environmentKey}`);
-        } catch (err) {
-          // Ignore errors for setting environment defaults
+          log(`✅ Enabled: ${flagKey}`);
+          importResults.flagsEnabled.push({ key: flagKey });
+          enabled = true;
+          resetRateLimitCounter();
+          
+          // Add delay between requests
+          if (i < flagsToEnable.length - 1) {
+            await sleep(1500); // 1.5 second delay
+          }
+        } catch (error) {
+          const errorMsg = error.message || error.toString();
+          
+          if (errorMsg.includes('rate_limited') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+            if (retryCount < maxRetries) {
+              await handleRateLimit();
+              retryCount++;
+            } else {
+              logError(`Failed to enable ${flagKey} after ${maxRetries} retries due to rate limiting`);
+              importResults.flagsEnableFailed.push({ key: flagKey, reason: 'rate limit exceeded' });
+              enabled = true;
+            }
+          } else if (errorMsg.includes('already') || errorMsg.includes('is already')) {
+            // Flag is already on, count as success
+            log(`ℹ️  ${flagKey} is already enabled`);
+            importResults.flagsEnabled.push({ key: flagKey });
+            enabled = true;
+            resetRateLimitCounter();
+          } else {
+            if (retryCount < maxRetries) {
+              await sleep(1000);
+              retryCount++;
+            } else {
+              logError(`Failed to enable ${flagKey}: ${errorMsg}`);
+              importResults.flagsEnableFailed.push({ key: flagKey, reason: errorMsg });
+              enabled = true;
+            }
+          }
         }
       }
-    } catch (error) {
-      const errorMsg = error.message || error.toString();
-      
-      // Check if flag already exists
-      if (errorMsg.includes('already exists') || errorMsg.includes('409')) {
-        console.log(`⚠️  Flag ${flagKey} already exists (skipping)`);
-        // Don't count as failure if it already exists
-      } else if (errorMsg.includes('rate_limited') || errorMsg.includes('rate limit')) {
-        console.log(`⏸️  Rate limited - waiting 2 seconds before continuing...`);
-        await sleep(2000); // Wait 2 seconds on rate limit
-        // Retry once
-        try {
-          const flagJson = JSON.stringify(flagDefinition).replace(/"/g, '\\"');
-          const cmd = `ldcli flags create --project ${projectKey} -d "${flagJson}"`;
-          execSync(cmd, { stdio: 'pipe', shell: true });
-          console.log(`✅ Created: ${flagKey} (after retry)`);
-          successCount++;
-        } catch (retryError) {
-          const retryMsg = retryError.message || retryError.toString();
-          console.error(`❌ Failed to create ${flagKey} after retry: ${retryMsg}`);
-          failedCount++;
-        }
-      } else if (errorMsg.includes('forbidden') || errorMsg.includes('Access to the requested resource was denied')) {
-        console.error(`❌ Permission denied for ${flagKey}`);
-        console.error(`   Your access token may not have Writer/Admin permissions.`);
-        console.error(`   Please check your token permissions in LaunchDarkly settings.`);
-        failedCount++;
-      } else if (errorMsg.includes('Tags are invalid') || errorMsg.includes('invalid_request')) {
-        console.error(`❌ Invalid tag format for ${flagKey}: ${errorMsg}`);
-        console.error(`   Tags: ${JSON.stringify(flag.tags)}`);
-        failedCount++;
-      } else {
-        console.error(`❌ Failed to create ${flagKey}: ${errorMsg}`);
-        failedCount++;
-      }
-    }
-  
-    // Add delay to avoid rate limiting (except for last flag)
-    if (i < flags.length - 1) {
-      await sleep(1000); // 1 second delay between requests to avoid rate limits
     }
     
-    console.log('');
-  }
+    log('\n✨ Flag enabling complete!');
+    log(`✅ Successfully enabled: ${importResults.flagsEnabled.length} flags`);
+    if (importResults.flagsEnableFailed.length > 0) {
+      log(`⚠️  Failed to enable: ${importResults.flagsEnableFailed.length} flags`);
+    }
 
-  console.log('✨ Flag import complete!');
-  console.log(`✅ Successfully created/updated: ${successCount} flags`);
-  if (failedCount > 0) {
-    console.log(`⚠️  Skipped/Failed: ${failedCount} flags`);
-  }
+    // Step 3: Apply targeting rules if export file was provided
+    if (targetingData && targetingData.flags) {
+      log('\n=== STEP 3: Applying Targeting Rules ===\n');
+      log('Note: Targeting rules are applied using the update command with full flag configuration.\n');
+      
+      for (let i = 0; i < targetingData.flags.length; i++) {
+        const exportedFlag = targetingData.flags[i];
+        const flagKey = exportedFlag.key;
+        const envConfig = exportedFlag.environments?.[environmentKey];
+        
+        if (!envConfig || (!envConfig.targets?.length && !envConfig.rules?.length)) {
+          continue; // Skip if no targeting config for this environment
+        }
+        
+        let retryCount = 0;
+        const maxRetries = 3;
+        let applied = false;
+        
+        while (retryCount <= maxRetries && !applied) {
+          try {
+            // Get current flag to merge with targeting config
+            const getCmd = `ldcli flags get --flag ${flagKey} --project ${projectKey} --env ${environmentKey} -o json`;
+            const currentFlag = JSON.parse(execSync(getCmd, { encoding: 'utf-8', stdio: 'pipe' }));
+            
+            // Update the flag with targeting rules
+            if (!currentFlag.environments) {
+              currentFlag.environments = {};
+            }
+            if (!currentFlag.environments[environmentKey]) {
+              currentFlag.environments[environmentKey] = {};
+            }
+            
+            // Apply targeting configuration
+            const envUpdate = {
+              ...currentFlag.environments[environmentKey],
+              targets: envConfig.targets || [],
+              rules: envConfig.rules || [],
+              fallthrough: envConfig.fallthrough || currentFlag.environments[environmentKey].fallthrough,
+              offVariation: envConfig.offVariation !== undefined ? envConfig.offVariation : currentFlag.environments[environmentKey].offVariation
+            };
+            
+            currentFlag.environments[environmentKey] = envUpdate;
+            
+            // Update flag using CLI
+            const updateJson = JSON.stringify(currentFlag).replace(/"/g, '\\"');
+            execSync(
+              `ldcli flags update --flag ${flagKey} --project ${projectKey} -d "${updateJson}"`,
+              { stdio: 'pipe', shell: true }
+            );
+            
+            importResults.targetingApplied.push({ 
+              key: flagKey, 
+              targets: envConfig.targets?.length || 0, 
+              rules: envConfig.rules?.length || 0 
+            });
+            log(`   ✅ Applied targeting for: ${flagKey} (${envConfig.targets?.length || 0} targets, ${envConfig.rules?.length || 0} rules)`);
+            applied = true;
+            resetRateLimitCounter();
+            
+            // Add delay between flags (longer for targeting updates)
+            if (i < targetingData.flags.length - 1) {
+              await sleep(2000); // 2 second delay for targeting updates
+            }
+          } catch (error) {
+            const errorMsg = error.message || error.toString();
+            
+            if (errorMsg.includes('rate_limited') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+              if (retryCount < maxRetries) {
+                await handleRateLimit();
+                retryCount++;
+              } else {
+                logError(`Failed to apply targeting for ${flagKey} after ${maxRetries} retries due to rate limiting`);
+                importResults.targetingFailed.push({ key: flagKey, reason: 'rate limit exceeded' });
+                applied = true;
+              }
+            } else {
+              if (retryCount < maxRetries) {
+                await sleep(1000);
+                retryCount++;
+              } else {
+                logError(`Could not apply targeting for ${flagKey}: ${errorMsg}`);
+                importResults.targetingFailed.push({ key: flagKey, reason: errorMsg });
+                applied = true;
+              }
+            }
+          }
+        }
+      }
+      
+      log('\n✨ Targeting application complete!');
+      log(`✅ Successfully applied targeting to: ${importResults.targetingApplied.length} flags`);
+      if (importResults.targetingFailed.length > 0) {
+        log(`⚠️  Failed to apply targeting to: ${importResults.targetingFailed.length} flags`);
+        log(`   Note: Some targeting rules may need to be configured manually in the LaunchDarkly dashboard.`);
+        log(`   The exported JSON file contains all targeting configurations for reference.`);
+      }
+    }
 
-  // Step 3: Apply targeting rules if export file was provided
-  if (targetingData && targetingData.flags) {
-    console.log('\n🎯 Applying targeting rules from export file...');
-    console.log('   Note: Targeting rules are applied using the update command with full flag configuration.');
-    let targetingApplied = 0;
-    let targetingFailed = 0;
+    // Generate final report
+    importResults.endTime = new Date();
+    const duration = Math.round((importResults.endTime - importResults.startTime) / 1000);
     
-    for (const exportedFlag of targetingData.flags) {
-      const flagKey = exportedFlag.key;
-      const envConfig = exportedFlag.environments?.[environmentKey];
-      
-      if (!envConfig || (!envConfig.targets?.length && !envConfig.rules?.length)) {
-        continue; // Skip if no targeting config for this environment
-      }
-      
-      try {
-        // Get current flag to merge with targeting config
-        const getCmd = `ldcli flags get --flag ${flagKey} --project ${projectKey} --env ${environmentKey} -o json`;
-        const currentFlag = JSON.parse(execSync(getCmd, { encoding: 'utf-8', stdio: 'pipe' }));
-        
-        // Update the flag with targeting rules
-        if (!currentFlag.environments) {
-          currentFlag.environments = {};
-        }
-        if (!currentFlag.environments[environmentKey]) {
-          currentFlag.environments[environmentKey] = {};
-        }
-        
-        // Apply targeting configuration
-        const envUpdate = {
-          ...currentFlag.environments[environmentKey],
-          targets: envConfig.targets || [],
-          rules: envConfig.rules || [],
-          fallthrough: envConfig.fallthrough || currentFlag.environments[environmentKey].fallthrough,
-          offVariation: envConfig.offVariation !== undefined ? envConfig.offVariation : currentFlag.environments[environmentKey].offVariation
-        };
-        
-        currentFlag.environments[environmentKey] = envUpdate;
-        
-        // Update flag using CLI
-        const updateJson = JSON.stringify(currentFlag).replace(/"/g, '\\"');
-        execSync(
-          `ldcli flags update --flag ${flagKey} --project ${projectKey} -d "${updateJson}"`,
-          { stdio: 'pipe', shell: true }
-        );
-        
-        targetingApplied++;
-        console.log(`   ✅ Applied targeting for: ${flagKey} (${envConfig.targets?.length || 0} targets, ${envConfig.rules?.length || 0} rules)`);
-        
-        await sleep(500); // Delay between flags
-      } catch (error) {
-        const errorMsg = error.message || error.toString();
-        console.log(`   ⚠️  Could not apply targeting for ${flagKey}: ${errorMsg}`);
-        targetingFailed++;
-      }
+    log('\n' + '='.repeat(60));
+    log('📊 IMPORT SUMMARY REPORT');
+    log('='.repeat(60));
+    log(`Start Time: ${importResults.startTime.toISOString()}`);
+    log(`End Time: ${importResults.endTime.toISOString()}`);
+    log(`Duration: ${duration} seconds (${Math.round(duration / 60)} minutes)`);
+    log('');
+    log('Flag Creation:');
+    log(`  ✅ Created: ${importResults.flagsCreated.length}`);
+    log(`  ⚠️  Skipped (already exists): ${importResults.flagsSkipped.length}`);
+    log(`  ❌ Failed: ${importResults.flagsFailed.length}`);
+    log('');
+    log('Flag Enabling:');
+    log(`  ✅ Enabled: ${importResults.flagsEnabled.length}`);
+    log(`  ❌ Failed: ${importResults.flagsEnableFailed.length}`);
+    log('');
+    if (targetingData) {
+      log('Targeting Rules:');
+      log(`  ✅ Applied: ${importResults.targetingApplied.length}`);
+      log(`  ❌ Failed: ${importResults.targetingFailed.length}`);
+      log('');
+    }
+    log('='.repeat(60));
+    
+    if (importResults.flagsFailed.length > 0) {
+      log('\n❌ Failed Flags:');
+      importResults.flagsFailed.forEach(flag => {
+        log(`  - ${flag.key}: ${flag.reason}`);
+      });
+      log('');
     }
     
-    console.log('\n✨ Targeting application complete!');
-    console.log(`✅ Successfully applied targeting to: ${targetingApplied} flags`);
-    if (targetingFailed > 0) {
-      console.log(`⚠️  Failed to apply targeting to: ${targetingFailed} flags`);
-      console.log(`   Note: Some targeting rules may need to be configured manually in the LaunchDarkly dashboard.`);
-      console.log(`   The exported JSON file contains all targeting configurations for reference.`);
+    if (importResults.flagsEnableFailed.length > 0) {
+      log('\n❌ Failed to Enable:');
+      importResults.flagsEnableFailed.forEach(flag => {
+        log(`  - ${flag.key}: ${flag.reason}`);
+      });
+      log('');
     }
+    
+    if (importResults.targetingFailed.length > 0) {
+      log('\n❌ Failed Targeting Applications:');
+      importResults.targetingFailed.forEach(flag => {
+        log(`  - ${flag.key}: ${flag.reason}`);
+      });
+      log('');
+    }
+    
+    log(`\n📝 Full log saved to: ${logFile}`);
+    log('\n✨✨ All done! ✨✨\n');
+    
+    console.log(`\n📝 Full import log saved to: ${logFile}`);
+    console.log('✨✨ All done! ✨✨\n');
+    
+  } catch (error) {
+    logError(`Fatal error during import: ${error.message}`);
+    logError(error.stack);
+    console.error('❌ Fatal error during import:', error.message);
+  } finally {
+    logStream.end();
   }
-  
-  console.log('\n✨✨ All done! ✨✨');
 })();
-

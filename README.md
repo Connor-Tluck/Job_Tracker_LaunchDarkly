@@ -96,6 +96,13 @@ npm install
    ```
    Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key.
 
+   **What the import script does:**
+   - Creates all 33 feature flags in your LaunchDarkly project
+   - **Automatically enables all flags in production** after creation
+   - Optionally applies targeting rules if you provide an export file (see step 4)
+   - Includes built-in rate limiting protection to avoid API throttling
+   - Generates a detailed log file with a complete report of the import process
+
 4. **Optionally apply targeting rules from export (Recommended):**
    
    If you have an exported JSON file with targeting configurations (created using `scripts/export-flags-with-targeting.js`), you can apply targeting rules automatically:
@@ -105,13 +112,33 @@ npm install
    
    This will apply individual targeting and rule-based targeting from the export file. Note that some complex targeting configurations may still need manual setup in the LaunchDarkly dashboard.
 
+5. **Review the import log:**
+   
+   After the import completes, check the log file in the `logs/` directory (e.g., `logs/import-2024-01-01T12-00-00-000Z.log`). The log contains:
+   - A summary report showing how many flags were created, enabled, and had targeting applied
+   - Detailed information about any failures or skipped flags
+   - Timestamps for each operation
+   - Error messages for troubleshooting
+   
+   The log file helps you verify that all flags were imported successfully and identify any issues that need manual attention.
+
 **Note:** The import script creates the flag structure and default values. Without the `--targeting-export` option, **flag targeting rules and experiment configurations will not copy over**. You should verify and configure:
 - Individual user targeting (if used)
 - Rule-based targeting rules
 - Experiment configurations
 - AI Configs (see Step 6)
 
-### Step 6: Configure LaunchDarkly AI Configs (For Chatbot)
+### Step 6: Review Import Log and Verify Flags
+
+After the import completes, review the log file in the `logs/` directory to verify all flags were imported successfully. The log includes a summary report showing:
+- Number of flags created
+- Number of flags enabled in production
+- Number of targeting rules applied (if using `--targeting-export`)
+- Any failures or errors that occurred
+
+If any flags failed to import or enable, you can manually create or enable them in the LaunchDarkly dashboard.
+
+### Step 7: Configure LaunchDarkly AI Configs (For Chatbot)
 
 The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model management. **You must configure AI Configs in your LaunchDarkly project** for the chatbot to work properly.
 
@@ -125,7 +152,7 @@ The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model ma
 
 **Without AI Configs configured:** The chatbot may return errors or not function as expected.
 
-### Step 7: Run the Development Server
+### Step 8: Run the Development Server
 
 ```bash
 npm run dev
@@ -133,7 +160,7 @@ npm run dev
 
 The application will start on `http://localhost:3000`.
 
-### Step 8: Verify Installation
+### Step 9: Verify Installation
 
 1. **Open your browser** and navigate to `http://localhost:3000`
 2. **Check LaunchDarkly Connection:** Open browser Developer Tools → Console tab. You should see LaunchDarkly connection messages (no errors).
