@@ -137,6 +137,22 @@ if (!fs.existsSync(flagsFile)) {
 // Read flags
 const flags = JSON.parse(fs.readFileSync(flagsFile, 'utf8'));
 
+// Check if we have fewer flags than expected (33 is the expected count)
+if (flags.length < 33) {
+  log(`⚠️  Warning: Found only ${flags.length} flags to import (expected 33)`);
+  log(`   This may be because some flags are turned off in production.`);
+  if (targetingExportFile) {
+    log(`   Since you provided a targeting export, you can regenerate flags.json to include all flags:`);
+    log(`   node scripts/regenerate-flags-from-export.js --export-file ${targetingExportFile}`);
+    log(`   Then run this import script again.\n`);
+  } else {
+    log(`   To include all flags (even those turned off), first export your flags:`);
+    log(`   node scripts/export-flags-with-targeting.js --project ${projectKey}`);
+    log(`   Then regenerate flags.json:`);
+    log(`   node scripts/regenerate-flags-from-export.js --export-file launchdarkly-flags-export-full.json\n`);
+  }
+}
+
 log('🚀 Importing flags to LaunchDarkly...');
 log(`📁 Project: ${projectKey}`);
 log(`🌍 Environment: ${environmentKey}`);

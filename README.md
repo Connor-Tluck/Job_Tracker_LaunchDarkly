@@ -90,20 +90,34 @@ npm install
    ldcli login
    ```
 
-3. **Import all flags:**
+3. **(Optional) Regenerate flags.json from your LaunchDarkly project:**
+   
+   If you want to ensure all flags from your LaunchDarkly project are included (including flags that are currently turned off), first export your flags, then regenerate the source file:
+   
+   ```bash
+   # Export all flags from your LaunchDarkly project
+   node scripts/export-flags-with-targeting.js --project YOUR_PROJECT_KEY --output launchdarkly-flags-export-full.json
+   
+   # Regenerate flags.json from the export (ensures all flags are included)
+   node scripts/regenerate-flags-from-export.js --export-file launchdarkly-flags-export-full.json
+   ```
+   
+   This step ensures that flags currently turned off in production are still included in the import. If you skip this step, the import will use the default `flags.json` file which may not include all flags.
+
+4. **Import all flags:**
    ```bash
    npm run ld:import -- --project YOUR_PROJECT_KEY
    ```
    Replace `YOUR_PROJECT_KEY` with your actual LaunchDarkly project key.
 
    **What the import script does:**
-   - Creates all 33 feature flags in your LaunchDarkly project
+   - Creates all feature flags in your LaunchDarkly project (from `flags.json` or regenerated file)
    - **Automatically enables all flags in production** after creation
-   - Optionally applies targeting rules if you provide an export file (see step 4)
+   - Optionally applies targeting rules if you provide an export file (see step 5)
    - Includes built-in rate limiting protection to avoid API throttling
    - Generates a detailed log file with a complete report of the import process
 
-4. **Optionally apply targeting rules from export (Recommended):**
+5. **Optionally apply targeting rules from export (Recommended):**
    
    If you have an exported JSON file with targeting configurations (created using `scripts/export-flags-with-targeting.js`), you can apply targeting rules automatically:
    ```bash
@@ -112,7 +126,7 @@ npm install
    
    This will apply individual targeting and rule-based targeting from the export file. Note that some complex targeting configurations may still need manual setup in the LaunchDarkly dashboard.
 
-5. **Review the import log:**
+6. **Review the import log:**
    
    After the import completes, check the log file in the `logs/` directory (e.g., `logs/import-2024-01-01T12-00-00-000Z.log`). The log contains:
    - A summary report showing how many flags were created, enabled, and had targeting applied
@@ -128,7 +142,7 @@ npm install
 - Experiment configurations
 - AI Configs (see Step 6)
 
-### Step 6: Review Import Log and Verify Flags
+### Step 7: Review Import Log and Verify Flags
 
 After the import completes, review the log file in the `logs/` directory to verify all flags were imported successfully. The log includes a summary report showing:
 - Number of flags created
@@ -138,7 +152,7 @@ After the import completes, review the log file in the `logs/` directory to veri
 
 If any flags failed to import or enable, you can manually create or enable them in the LaunchDarkly dashboard.
 
-### Step 7: Configure LaunchDarkly AI Configs (For Chatbot)
+### Step 8: Configure LaunchDarkly AI Configs (For Chatbot)
 
 The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model management. **You must configure AI Configs in your LaunchDarkly project** for the chatbot to work properly.
 
@@ -152,7 +166,7 @@ The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model ma
 
 **Without AI Configs configured:** The chatbot may return errors or not function as expected.
 
-### Step 8: Run the Development Server
+### Step 9: Run the Development Server
 
 ```bash
 npm run dev
@@ -160,7 +174,7 @@ npm run dev
 
 The application will start on `http://localhost:3000`.
 
-### Step 9: Verify Installation
+### Step 10: Verify Installation
 
 1. **Open your browser** and navigate to `http://localhost:3000`
 2. **Check LaunchDarkly Connection:** Open browser Developer Tools → Console tab. You should see LaunchDarkly connection messages (no errors).
