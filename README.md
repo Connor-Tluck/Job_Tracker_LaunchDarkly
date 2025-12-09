@@ -201,7 +201,7 @@ The application will start on `http://localhost:3000`.
 
 ## For Reviewers: Key Admin Pages
 
-Suggest starting with the Assignment Docs page as your primary guide during the review process. This document explains what was built as it pertains to the take-home assignment and provides the best way to confirm functionality. 
+The application includes admin pages built into the core app that can be accessed via URL or the sidebar navigation. **Suggest starting with the Assignment Docs page** as your primary guide during the review process. This document explains what was built as it pertains to the take-home assignment and provides the best way to confirm functionality. 
 
 ### Assignment Docs Page (Suggested Starting Point)
 - **Purpose:** Comprehensive documentation of how the application satisfies LaunchDarkly technical exercise requirements
