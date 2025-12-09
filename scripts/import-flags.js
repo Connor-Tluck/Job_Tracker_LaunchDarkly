@@ -374,11 +374,33 @@ function resetRateLimitCounter() {
               currentFlag.environments[environmentKey] = {};
             }
             
+            // Clean rules by removing IDs that LaunchDarkly will generate
+            const cleanRules = (envConfig.rules || []).map(rule => {
+              const cleanRule = { ...rule };
+              delete cleanRule._id;
+              delete cleanRule.ref;
+              if (cleanRule.clauses) {
+                cleanRule.clauses = cleanRule.clauses.map(clause => {
+                  const cleanClause = { ...clause };
+                  delete cleanClause._id;
+                  return cleanClause;
+                });
+              }
+              return cleanRule;
+            });
+            
+            // Clean targets (remove any IDs if present)
+            const cleanTargets = (envConfig.targets || []).map(target => {
+              const cleanTarget = { ...target };
+              delete cleanTarget._id;
+              return cleanTarget;
+            });
+            
             // Apply targeting configuration
             const envUpdate = {
               ...currentFlag.environments[environmentKey],
-              targets: envConfig.targets || [],
-              rules: envConfig.rules || [],
+              targets: cleanTargets,
+              rules: cleanRules,
               fallthrough: envConfig.fallthrough || currentFlag.environments[environmentKey].fallthrough,
               offVariation: envConfig.offVariation !== undefined ? envConfig.offVariation : currentFlag.environments[environmentKey].offVariation
             };
