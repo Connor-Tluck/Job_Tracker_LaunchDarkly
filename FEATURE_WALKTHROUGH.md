@@ -18,7 +18,7 @@ Before toggling, verify the Analytics page is accessible and the sidebar link is
 
 **Screenshot:** Sidebar with Analytics link visible
 
-![Sidebar with Analytics link visible](././public/images/examples/analytics-sidebar-before.png)
+<img src="././public/images/examples/analytics-sidebar-before.png" alt="Sidebar with Analytics link visible" width="70%" />
 
 #### Step 2: LaunchDarkly Configuration
 
@@ -26,7 +26,7 @@ Navigate to LaunchDarkly dashboard → Feature Flags → `show-analytics-page`
 
 **Screenshot:** LaunchDarkly flag configuration page
 
-![LaunchDarkly flag configuration page](./public/images/examples/analytics-flag-config.png)
+<img src="./public/images/examples/analytics-flag-config.png" alt="LaunchDarkly flag configuration page" width="70%" />
 
 #### Step 3: Toggle Flag OFF
 
@@ -34,7 +34,7 @@ Toggle the flag to OFF in LaunchDarkly dashboard. Observe instant changes withou
 
 **Screenshot:** Sidebar after toggle - Analytics link removed
 
-![Sidebar after toggle - Analytics link removed](./public/images/examples/analytics-sidebar-after.png)
+<img src="./public/images/examples/analytics-sidebar-after.png" alt="Sidebar after toggle - Analytics link removed" width="70%" />
 
 #### Step 4: Verify 404 Page
 
@@ -42,7 +42,7 @@ Navigate directly to `/analytics` to see the 404 error page.
 
 **Screenshot:** 404 page when accessing /analytics
 
-![404 page when accessing /analytics](./public/images/examples/analytics-404-page.png)
+<img src="./public/images/examples/analytics-404-page.png" alt="404 page when accessing /analytics" width="70%" />
 
 ---
 
@@ -61,7 +61,7 @@ Configure individual targeting for Beta Tester user in LaunchDarkly dashboard.
 
 **Screenshot:** LaunchDarkly individual targeting configuration
 
-![LaunchDarkly individual targeting configuration](./public/images/examples/targeting-individual-beta.png)
+<img src="./public/images/examples/targeting-individual-beta.png" alt="LaunchDarkly individual targeting configuration" width="70%" />
 
 #### Step 2: Switch to Beta Tester in Admin Page
 
@@ -69,7 +69,7 @@ Navigate to `/admin` and use the User Context Switcher to select Beta Tester.
 
 **Screenshot:** Admin page with Beta Tester selected
 
-![Admin page with Beta Tester selected](./public/images/examples/targeting-beta-selected.png)
+<img src="./public/images/examples/targeting-beta-selected.png" alt="Admin page with Beta Tester selected" width="70%" />
 
 #### Step 3: Premium Feature Working - Chatbot Accessible
 
@@ -77,7 +77,7 @@ With Beta Tester selected, navigate to `/landing/support-bot` to verify the chat
 
 **Screenshot:** Support Bot page accessible and working for Beta Tester
 
-![Support Bot page accessible and working for Beta Tester](./public/images/examples/targeting-beta-chatbot-working.png)
+<img src="./public/images/examples/targeting-beta-chatbot-working.png" alt="Support Bot page accessible and working for Beta Tester" width="70%" />
 
 #### Step 4: Switch to Free User
 
@@ -85,7 +85,7 @@ Navigate back to `/admin` and use the User Context Switcher to select Free User.
 
 **Screenshot:** Admin page with Free User selected
 
-![Admin page with Free User selected](./public/images/examples/targeting-free-user-selected.png)
+<img src="./public/images/examples/targeting-free-user-selected.png" alt="Admin page with Free User selected" width="70%" />
 
 #### Step 5: Free User - Chatbot Returns 404
 
@@ -93,7 +93,7 @@ With Free User selected, navigate to `/landing/support-bot` to see the 404 error
 
 **Screenshot:** 404 page when Free User accesses /landing/support-bot
 
-![404 page when Free User accesses /landing/support-bot](./public/images/examples/targeting-free-chatbot-404.png)
+<img src="./public/images/examples/targeting-free-chatbot-404.png" alt="404 page when Free User accesses /landing/support-bot" width="70%" />
 
 ---
 
@@ -113,7 +113,7 @@ Configure AI Config in LaunchDarkly with two variations: standard_open_ai (frien
 
 **Screenshot:** LaunchDarkly AI Config variations configuration
 
-![LaunchDarkly AI Config variations configuration](./public/images/examples/ai-config-variations.png)
+<img src="./public/images/examples/ai-config-variations.png" alt="LaunchDarkly AI Config variations configuration" width="70%" />
 
 #### Step 2: Configure Model Behavior in Prompting
 
@@ -121,7 +121,7 @@ Configure the system prompt and model parameters for each variation. For the `co
 
 **Screenshot:** LaunchDarkly AI Config variation prompting and model configuration
 
-![LaunchDarkly AI Config variation prompting and model configuration](./public/images/examples/ai-config-prompting.png)
+<img src="./public/images/examples/ai-config-prompting.png" alt="LaunchDarkly AI Config variation prompting and model configuration" width="70%" />
 
 #### Step 3: AI Config Individual Targeting
 
@@ -129,7 +129,7 @@ Configure individual targeting: Beta Tester (`user-001`) → `combative_open_ai`
 
 **Screenshot:** LaunchDarkly AI Config individual targeting for Beta Tester
 
-![LaunchDarkly AI Config individual targeting for Beta Tester](./public/images/examples/ai-config-beta-targeting.png)
+<img src="./public/images/examples/ai-config-beta-targeting.png" alt="LaunchDarkly AI Config individual targeting for Beta Tester" width="70%" />
 
 #### Step 4: Switch to Beta Tester and Test Chatbot
 
@@ -137,7 +137,7 @@ Navigate to `/admin`, switch to Beta Tester, and use the Chat Test Interface to 
 
 **Screenshot:** Chat Test Interface with Beta Tester selected
 
-![Chat Test Interface with Beta Tester selected](./public/images/examples/ai-config-beta-chat-interface.png)
+<img src="./public/images/examples/ai-config-beta-chat-interface.png" alt="Chat Test Interface with Beta Tester selected" width="70%" />
 
 #### Step 5: Grumpy Chatbot Response
 
@@ -145,7 +145,7 @@ Observe the chatbot response showing grumpy, sarcastic tone (e.g., "Oh great, an
 
 **Screenshot:** Chatbot response with grumpy/sarcastic tone
 
-![Chatbot response with grumpy/sarcastic tone](./public/images/examples/ai-config-beta-grumpy-response.png)
+<img src="./public/images/examples/ai-config-beta-grumpy-response.png" alt="Chatbot response with grumpy/sarcastic tone" width="70%" />
 
 #### Step 6: Test Other Configuration - Friendly Chatbot
 
@@ -153,7 +153,7 @@ Switch to Premium User in the User Context Switcher and test the chatbot again. 
 
 **Screenshot:** Chatbot response with friendly/helpful tone (Premium User)
 
-![Chatbot response with friendly/helpful tone (Premium User)](./public/images/examples/ai-config-premium-friendly-response.png)
+<img src="./public/images/examples/ai-config-premium-friendly-response.png" alt="Chatbot response with friendly/helpful tone (Premium User)" width="70%" />
 
 ---
 
@@ -182,7 +182,7 @@ Navigate to LaunchDarkly Event Explorer to verify that events are being tracked 
 
 **Screenshot:** LaunchDarkly Event Explorer showing tracked events
 
-![LaunchDarkly Event Explorer showing tracked events](./public/images/examples/experiment-event-explorer.png)
+<img src="./public/images/examples/experiment-event-explorer.png" alt="LaunchDarkly Event Explorer showing tracked events" width="70%" />
 
 #### Step 3: Configure Metrics
 
@@ -190,7 +190,7 @@ In LaunchDarkly, configure experiment metrics. Set the primary metric to `suppor
 
 **Screenshot:** LaunchDarkly experiment metrics configuration
 
-![LaunchDarkly experiment metrics configuration](./public/images/examples/experiment-metrics.png)
+<img src="./public/images/examples/experiment-metrics.png" alt="LaunchDarkly experiment metrics configuration" width="70%" />
 
 #### Step 4: Set Up Experiment
 
@@ -198,7 +198,7 @@ Configure the experiment in LaunchDarkly: 50% sample size, 50/50 split between c
 
 **Screenshot:** LaunchDarkly experiment configuration page
 
-![LaunchDarkly experiment configuration page](./public/images/examples/experiment-config.png)
+<img src="./public/images/examples/experiment-config.png" alt="LaunchDarkly experiment configuration page" width="70%" />
 
 ---
 
@@ -231,7 +231,7 @@ Test the integration by starting or stopping an experiment in LaunchDarkly to tr
 
 **Screenshot:** LaunchDarkly webhook configuration and Slack integration
 
-![LaunchDarkly webhook configuration and Slack integration](./public/images/experiment-chatbot-integration.png)
+<img src="./public/images/experiment-chatbot-integration.png" alt="LaunchDarkly webhook configuration and Slack integration" width="70%" />
 
 ---
 
