@@ -179,9 +179,32 @@ node scripts/import-ai-configs.js --project YOUR_PROJECT_KEY --export-file launc
 **What gets imported:**
 - AI Config structure (key, name, mode)
 - All variations with their prompts and model configurations
-- Note: Targeting rules need to be configured manually in the LaunchDarkly dashboard (the export file contains targeting information for reference)
+- **Note:** Targeting rules need to be configured manually in the LaunchDarkly dashboard (see instructions below)
 
-**Option C: Manual Configuration**
+**After Import: Configure AI Config Targeting Manually**
+
+After importing the AI Config, you **must** configure the targeting rules manually in the LaunchDarkly dashboard:
+
+1. **Navigate to:** `https://app.launchdarkly.com/YOUR_PROJECT_KEY/production/ai-configs/jobs-os-basic-chatbot/targeting`
+   - Or go to: LaunchDarkly Dashboard → Your Project → AI Configs → `jobs-os-basic-chatbot` → Targeting tab → Production environment
+
+2. **Enable the AI Config:**
+   - Toggle the "AI Config is" switch to **On**
+
+3. **Configure Individual Targeting:**
+   - Click the **"Individual targets"** section (or the plus icon to add individual targets)
+   - Add target: `user-001` (context kind: `user`)
+   - Set variation: `combative_open_ai` (this serves the grumpy chatbot to Beta Tester)
+
+4. **Configure Default Rule (Fallthrough):**
+   - In the **"Default rule"** section, set the variation to: `standard_open_ai` (this serves the friendly chatbot to all other users)
+
+**Expected Targeting Configuration:**
+- **Individual Target:** `user-001` → `combative_open_ai` variation
+- **Default Rule (Fallthrough):** `standard_open_ai` variation
+- **Result:** Beta Tester (`user-001`) receives the grumpy chatbot, all other users receive the friendly chatbot
+
+**Option C: Manual Configuration (Full Setup)**
 
 If you prefer to configure manually:
 1. **Navigate to your LaunchDarkly project → AI Configs**
