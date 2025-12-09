@@ -154,15 +154,11 @@ If any flags failed to import or enable, you can manually create or enable them 
 
 ### Step 8: Import LaunchDarkly AI Configs (For Chatbot)
 
-The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model management.
+The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model management. The export file is included in the repository.
 
 **Import AI Configs:**
 
 ```bash
-# If you need to export from original project first:
-node scripts/export-ai-configs.js --project ORIGINAL_PROJECT_KEY --output launchdarkly-ai-configs-export.json
-
-# Import AI Configs to your project:
 node scripts/import-ai-configs.js --project YOUR_PROJECT_KEY --export-file launchdarkly-ai-configs-export.json --environment production
 ```
 
