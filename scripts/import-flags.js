@@ -362,17 +362,9 @@ function resetRateLimitCounter() {
         
         while (retryCount <= maxRetries && !applied) {
           try {
-            // Get current flag to merge with targeting config
+            // Get current flag to preserve existing state
             const getCmd = `ldcli flags get --flag ${flagKey} --project ${projectKey} --env ${environmentKey} -o json`;
             const currentFlag = JSON.parse(execSync(getCmd, { encoding: 'utf-8', stdio: 'pipe' }));
-            
-            // Update the flag with targeting rules
-            if (!currentFlag.environments) {
-              currentFlag.environments = {};
-            }
-            if (!currentFlag.environments[environmentKey]) {
-              currentFlag.environments[environmentKey] = {};
-            }
             
             // Clean rules by removing IDs that LaunchDarkly will generate
             const cleanRules = (envConfig.rules || []).map(rule => {
@@ -396,19 +388,23 @@ function resetRateLimitCounter() {
               return cleanTarget;
             });
             
-            // Apply targeting configuration
-            const envUpdate = {
-              ...currentFlag.environments[environmentKey],
-              targets: cleanTargets,
-              rules: cleanRules,
-              fallthrough: envConfig.fallthrough || currentFlag.environments[environmentKey].fallthrough,
-              offVariation: envConfig.offVariation !== undefined ? envConfig.offVariation : currentFlag.environments[environmentKey].offVariation
+            // Create update payload with only necessary fields (remove read-only fields)
+            const currentEnv = currentFlag.environments?.[environmentKey] || {};
+            const updatePayload = {
+              key: flagKey,
+              environments: {
+                [environmentKey]: {
+                  on: currentEnv.on !== undefined ? currentEnv.on : true,
+                  targets: cleanTargets,
+                  rules: cleanRules,
+                  fallthrough: envConfig.fallthrough || currentEnv.fallthrough || { variation: 0 },
+                  offVariation: envConfig.offVariation !== undefined ? envConfig.offVariation : (currentEnv.offVariation !== undefined ? currentEnv.offVariation : 1)
+                }
+              }
             };
             
-            currentFlag.environments[environmentKey] = envUpdate;
-            
             // Update flag using CLI
-            const updateJson = JSON.stringify(currentFlag).replace(/"/g, '\\"');
+            const updateJson = JSON.stringify(updatePayload).replace(/"/g, '\\"');
             execSync(
               `ldcli flags update --flag ${flagKey} --project ${projectKey} -d "${updateJson}"`,
               { stdio: 'pipe', shell: true }
@@ -430,7 +426,12 @@ function resetRateLimitCounter() {
           } catch (error) {
             const errorMsg = error.message || error.toString();
             
-            if (errorMsg.includes('rate_limited') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+            // Handle flag not found (skip gracefully)
+            if (errorMsg.includes('not found') || errorMsg.includes('not_found') || errorMsg.includes('Invalid resource identifier')) {
+              log(`⚠️  Flag ${flagKey} not found (skipping targeting application)`);
+              importResults.targetingFailed.push({ key: flagKey, reason: 'flag not found' });
+              applied = true;
+            } else if (errorMsg.includes('rate_limited') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
               if (retryCount < maxRetries) {
                 await handleRateLimit();
                 retryCount++;

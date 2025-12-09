@@ -8,8 +8,20 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const projectKey = 'interview-import-test';
-const environmentKey = 'production';
+// Parse command line arguments
+const args = process.argv.slice(2);
+let projectKey = 'interview-import-test-2'; // Default to new project
+let environmentKey = 'production';
+
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--project' && args[i + 1]) {
+    projectKey = args[i + 1];
+    i++;
+  } else if (args[i] === '--environment' && args[i + 1]) {
+    environmentKey = args[i + 1];
+    i++;
+  }
+}
 
 console.log('🔍 Checking flags with targeting rules in LaunchDarkly...\n');
 
