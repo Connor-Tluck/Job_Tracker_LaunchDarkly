@@ -387,18 +387,6 @@ export default function SupportBotPage() {
             </p>
           </div>
         </Card>
-
-        {/* Helpful Tips */}
-        <Card className="mt-6 p-4 bg-background-tertiary">
-          <p className="text-sm font-medium mb-2">💡 What can I help you with?</p>
-          <ul className="text-xs text-foreground-secondary space-y-1 list-disc list-inside">
-            <li>Features and capabilities of Job Search OS</li>
-            <li>Pricing plans and subscription options</li>
-            <li>Getting started guides and tutorials</li>
-            <li>Troubleshooting common issues</li>
-            <li>Best practices for job search tracking</li>
-          </ul>
-        </Card>
       </div>
     </div>
   );

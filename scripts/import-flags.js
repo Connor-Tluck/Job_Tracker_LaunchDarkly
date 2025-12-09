@@ -4,9 +4,10 @@
  * Import LaunchDarkly flags using the CLI
  * 
  * This script uses the LaunchDarkly CLI to import all flags from flags-cli-format.json
+ * Optionally applies targeting rules from an exported JSON file
  * 
  * Usage:
- *   node scripts/import-flags.js --project YOUR_PROJECT_KEY [--environment ENV_KEY]
+ *   node scripts/import-flags.js --project YOUR_PROJECT_KEY [--environment ENV_KEY] [--targeting-export EXPORT_FILE.json]
  */
 
 const { execSync } = require('child_process');
@@ -17,6 +18,7 @@ const path = require('path');
 const args = process.argv.slice(2);
 let projectKey = null;
 let environmentKey = null;
+let targetingExportFile = null;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--project' && args[i + 1]) {
@@ -25,13 +27,43 @@ for (let i = 0; i < args.length; i++) {
   } else if (args[i] === '--environment' && args[i + 1]) {
     environmentKey = args[i + 1];
     i++;
+  } else if (args[i] === '--targeting-export' && args[i + 1]) {
+    targetingExportFile = args[i + 1];
+    i++;
   }
 }
 
 if (!projectKey) {
   console.error('❌ Error: --project is required');
-  console.error('Usage: node scripts/import-flags.js --project PROJECT_KEY [--environment ENV_KEY]');
+  console.error('Usage: node scripts/import-flags.js --project PROJECT_KEY [--environment ENV_KEY] [--targeting-export EXPORT_FILE.json]');
   process.exit(1);
+}
+
+// Default environment to production if not specified
+if (!environmentKey) {
+  environmentKey = 'production';
+}
+
+// Load targeting export if provided
+let targetingData = null;
+if (targetingExportFile) {
+  const exportPath = path.isAbsolute(targetingExportFile) 
+    ? targetingExportFile 
+    : path.join(__dirname, '..', targetingExportFile);
+  
+  if (!fs.existsSync(exportPath)) {
+    console.error(`❌ Error: Targeting export file not found: ${exportPath}`);
+    process.exit(1);
+  }
+  
+  try {
+    targetingData = JSON.parse(fs.readFileSync(exportPath, 'utf8'));
+    console.log(`📋 Loaded targeting data from: ${targetingExportFile}`);
+    console.log(`   Found ${targetingData.flags?.length || 0} flags with targeting configurations\n`);
+  } catch (error) {
+    console.error(`❌ Error reading targeting export file: ${error.message}`);
+    process.exit(1);
+  }
 }
 
 // Check if ldcli is installed
@@ -159,10 +191,78 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
     console.log('');
   }
 
-  console.log('✨ Import complete!');
+  console.log('✨ Flag import complete!');
   console.log(`✅ Successfully created/updated: ${successCount} flags`);
   if (failedCount > 0) {
     console.log(`⚠️  Skipped/Failed: ${failedCount} flags`);
   }
+
+  // Step 3: Apply targeting rules if export file was provided
+  if (targetingData && targetingData.flags) {
+    console.log('\n🎯 Applying targeting rules from export file...');
+    console.log('   Note: Targeting rules are applied using the update command with full flag configuration.');
+    let targetingApplied = 0;
+    let targetingFailed = 0;
+    
+    for (const exportedFlag of targetingData.flags) {
+      const flagKey = exportedFlag.key;
+      const envConfig = exportedFlag.environments?.[environmentKey];
+      
+      if (!envConfig || (!envConfig.targets?.length && !envConfig.rules?.length)) {
+        continue; // Skip if no targeting config for this environment
+      }
+      
+      try {
+        // Get current flag to merge with targeting config
+        const getCmd = `ldcli flags get --flag ${flagKey} --project ${projectKey} --env ${environmentKey} -o json`;
+        const currentFlag = JSON.parse(execSync(getCmd, { encoding: 'utf-8', stdio: 'pipe' }));
+        
+        // Update the flag with targeting rules
+        if (!currentFlag.environments) {
+          currentFlag.environments = {};
+        }
+        if (!currentFlag.environments[environmentKey]) {
+          currentFlag.environments[environmentKey] = {};
+        }
+        
+        // Apply targeting configuration
+        const envUpdate = {
+          ...currentFlag.environments[environmentKey],
+          targets: envConfig.targets || [],
+          rules: envConfig.rules || [],
+          fallthrough: envConfig.fallthrough || currentFlag.environments[environmentKey].fallthrough,
+          offVariation: envConfig.offVariation !== undefined ? envConfig.offVariation : currentFlag.environments[environmentKey].offVariation
+        };
+        
+        currentFlag.environments[environmentKey] = envUpdate;
+        
+        // Update flag using CLI
+        const updateJson = JSON.stringify(currentFlag).replace(/"/g, '\\"');
+        execSync(
+          `ldcli flags update --flag ${flagKey} --project ${projectKey} -d "${updateJson}"`,
+          { stdio: 'pipe', shell: true }
+        );
+        
+        targetingApplied++;
+        console.log(`   ✅ Applied targeting for: ${flagKey} (${envConfig.targets?.length || 0} targets, ${envConfig.rules?.length || 0} rules)`);
+        
+        await sleep(500); // Delay between flags
+      } catch (error) {
+        const errorMsg = error.message || error.toString();
+        console.log(`   ⚠️  Could not apply targeting for ${flagKey}: ${errorMsg}`);
+        targetingFailed++;
+      }
+    }
+    
+    console.log('\n✨ Targeting application complete!');
+    console.log(`✅ Successfully applied targeting to: ${targetingApplied} flags`);
+    if (targetingFailed > 0) {
+      console.log(`⚠️  Failed to apply targeting to: ${targetingFailed} flags`);
+      console.log(`   Note: Some targeting rules may need to be configured manually in the LaunchDarkly dashboard.`);
+      console.log(`   The exported JSON file contains all targeting configurations for reference.`);
+    }
+  }
+  
+  console.log('\n✨✨ All done! ✨✨');
 })();
 

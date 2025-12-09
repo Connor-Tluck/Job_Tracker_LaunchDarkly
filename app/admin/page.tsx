@@ -56,7 +56,7 @@ export default function AdminPage() {
         <p className="text-xs uppercase tracking-[0.4em] text-foreground-secondary">Feature Flags</p>
         <h1 className="text-4xl font-semibold">Admin Dashboard</h1>
         <p className="text-sm text-foreground-secondary mt-2">
-          View and monitor all LaunchDarkly feature flags in real-time
+          View and monitor all LaunchDarkly feature flags in real-time. Use this dashboard to see which flags are currently active, test user targeting by switching between different user contexts (Beta Tester, Premium User, Free User), and track AI model outputs based on active user groups. The Targeting Demo Card shows how flags respond to different user attributes, and the Chat Test Card allows you to test AI Config variations for different user segments.
         </p>
       </div>
 

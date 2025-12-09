@@ -9,8 +9,7 @@
     "lint": "next lint",
     "ld:convert": "node scripts/convert-flags-for-cli.js",
     "ld:import": "node scripts/import-flags.js",
-    "ld:turn-on": "node scripts/turn-on-flags.js",
-    "ld:setup-targeting": "node scripts/setup-targeting.js"
+    "ld:turn-on": "node scripts/turn-on-flags.js"
   },
   "dependencies": {
     "chart.js": "^4.4.0",
