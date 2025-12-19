@@ -378,6 +378,33 @@
     "temporary": false
   },
   {
+    "name": "Show Dashboard Pipeline Status",
+    "key": "show-dashboard-pipeline-status",
+    "description": "Controls visibility of the pipeline status card on the dashboard",
+    "tags": [
+      "dashboard-components"
+    ],
+    "variations": [
+      {
+        "value": true,
+        "name": "On"
+      },
+      {
+        "value": false,
+        "name": "Off"
+      }
+    ],
+    "defaults": {
+      "onVariation": 0,
+      "offVariation": 1
+    },
+    "clientSideAvailability": {
+      "usingEnvironmentId": true,
+      "usingMobileKey": false
+    },
+    "temporary": false
+  },
+  {
     "name": "Show Dashboard Recent Jobs",
     "key": "show-dashboard-recent-jobs",
     "description": "Controls visibility of the recent applications section on the dashboard",

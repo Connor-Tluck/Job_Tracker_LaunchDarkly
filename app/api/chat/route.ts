@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { getLDServerClient, convertToLDContext } from '@/lib/launchdarkly/serverClient';
+import { registerInstrumentations } from "@opentelemetry/instrumentation";
+import { OpenAIInstrumentation } from "@traceloop/instrumentation-openai";
+
+// Ensure this route runs in the Node.js runtime (required for LaunchDarkly server SDK + OTel instrumentation).
+export const runtime = "nodejs";
+
+let openAIInstrumentationRegistered = false;
+
+function ensureOpenAIInstrumentationRegistered() {
+  if (openAIInstrumentationRegistered) return;
+  // IMPORTANT (per LaunchDarkly docs): initialize the LaunchDarkly SDK first, then register OpenLLMetry instrumentations,
+  // then import/use the provider SDK (OpenAI) so it can be patched for tracing.
+  registerInstrumentations({
+    instrumentations: [new OpenAIInstrumentation()],
+  });
+  openAIInstrumentationRegistered = true;
+}
 
 // Fallback system prompt (used if LaunchDarkly is unavailable)
-const FALLBACK_SYSTEM_PROMPT = `You are a helpful and friendly customer support bot for Job Search OS, a comprehensive job search management platform. Your role is to assist users with questions about features, pricing, getting started, troubleshooting, and best practices.
+const FALLBACK_SYSTEM_PROMPT = `You are a helpful and friendly customer support bot for Career Stack, a comprehensive job search management platform. Your role is to assist users with questions about features, pricing, getting started, troubleshooting, and best practices.
 
-## About Job Search OS
+## About Career Stack
 
-Job Search OS is a complete job search operating system designed to help professionals manage their entire job search pipeline from application to offer. It's built for professionals who take their career seriously and want to stay organized throughout their job search journey.
+Career Stack is a complete job search operating system designed to help professionals manage their entire job search pipeline from application to offer. It's built for professionals who take their career seriously and want to stay organized throughout their job search journey.
 
 ## Core Features
 
@@ -112,7 +128,7 @@ Job Search OS is a complete job search operating system designed to help profess
 - Encourage users to explore features and try things out
 - For technical issues, suggest checking the documentation or contacting support
 
-Remember: Job searching is stressful enough. Job Search OS eliminates the chaos by giving users one place to manage everything—from the moment they apply to the final interview.`;
+Remember: Job searching is stressful enough. Career Stack eliminates the chaos by giving users one place to manage everything—from the moment they apply to the final interview.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -127,7 +143,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { messages, userContext } = requestBody;
+    const { messages, userContext, stream } = requestBody;
+    // `stream=true` returns the assistant response incrementally (for a "typing" UI).
 
     // IMPORTANT: Replace this OpenAI API key with your actual OpenAI API key
     // Get your API key from: https://platform.openai.com/api-keys
@@ -154,10 +171,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
     // Get LaunchDarkly server client
     let ldClient = null;
     try {
@@ -175,6 +188,16 @@ export async function POST(request: NextRequest) {
       });
       // Continue with fallback configuration
     }
+
+    // Register OpenAI instrumentation AFTER LaunchDarkly init and BEFORE importing the OpenAI SDK.
+    // This enables LLM observability spans (prompt/response/latency/tokens) in LaunchDarkly Traces.
+    if (ldClient) {
+      ensureOpenAIInstrumentationRegistered();
+    }
+
+    // Import OpenAI after instrumentation has been registered so it can be patched.
+    const { default: OpenAI } = await import("openai");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
     let model = 'gpt-4o-mini';
     let temperature = 0.7;
@@ -301,26 +324,64 @@ export async function POST(request: NextRequest) {
       ];
     }
 
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      model: model,
-      messages: openaiMessages,
-      temperature: temperature,
-      max_tokens: maxTokens,
-    });
+    // Call OpenAI API.
+    // Important: We fetch the AI Config first (model/prompt/params), then pass it into OpenAI.
+    if (stream) {
+      const completionStream = await openai.chat.completions.create({
+        model: model,
+        messages: openaiMessages,
+        temperature: temperature,
+        max_tokens: maxTokens,
+        stream: true,
+      });
 
-    const assistantMessage = completion.choices[0]?.message?.content;
+      const encoder = new TextEncoder();
 
-    if (!assistantMessage) {
-      return NextResponse.json(
-        { error: 'No response from OpenAI' },
-        { status: 500 }
+      // We stream *plain text chunks* (not SSE) to keep the client simple: it just appends bytes to the message.
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          async start(controller) {
+            try {
+              for await (const part of completionStream) {
+                const delta = part.choices?.[0]?.delta?.content;
+                if (delta) {
+                  controller.enqueue(encoder.encode(delta));
+                }
+              }
+              controller.close();
+            } catch (e) {
+              controller.error(e);
+            }
+          },
+        }),
+        {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+          },
+        }
       );
-    }
+    } else {
+      const completion = await openai.chat.completions.create({
+        model: model,
+        messages: openaiMessages,
+        temperature: temperature,
+        max_tokens: maxTokens,
+      });
 
-    return NextResponse.json({
-      message: assistantMessage,
-    });
+      const assistantMessage = completion.choices[0]?.message?.content;
+
+      if (!assistantMessage) {
+        return NextResponse.json(
+          { error: 'No response from OpenAI' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        message: assistantMessage,
+      });
+    }
   } catch (error: any) {
     console.error('=== Chat API Error ===');
     console.error('Error:', error);

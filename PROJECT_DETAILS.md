@@ -8,7 +8,7 @@ Technical documentation and project overview for the Job Tracker - LaunchDarkly 
 
 This application demonstrates a comprehensive integration of LaunchDarkly's feature flag ecosystem into an existing job tracker application. The project showcases how LaunchDarkly can be used to control feature releases, implement user targeting, run experiments, and manage AI configurations dynamically.
 
-The application integrates **30 feature flags** that control page access, component visibility, and feature toggles throughout the application. These flags are managed through LaunchDarkly's React Client SDK for browser-side evaluation and Node.js Server SDK for server-side operations, enabling real-time flag updates without page reloads.
+The application integrates **38 feature flags** that control page access, component visibility, feature toggles, business user mode, and admin documentation pages throughout the application. These flags are managed through LaunchDarkly's React Client SDK for browser-side evaluation and Node.js Server SDK for server-side operations, enabling real-time flag updates without page reloads.
 
 ---
 
@@ -26,7 +26,7 @@ The application leverages LaunchDarkly's streaming capabilities to provide insta
 
 ### User Targeting
 
-The application implements both individual and rule-based targeting to demonstrate how different user segments receive different feature experiences. The `show-premium-feature-demo` flag serves as the primary example, controlling access to the support chatbot feature.
+The application implements both individual and rule-based targeting to demonstrate how different user segments receive different feature experiences. The `show-premium-feature-demo` flag serves as the primary example for premium demo targeting, and the `show-chatbot` flag controls access to the support chatbot feature.
 
 **Individual Targeting:** Specific users like `user-001` (Beta Tester) and `user-002` (Premium User) are individually targeted to receive the flag ON, granting them access to premium features.
 
@@ -71,7 +71,7 @@ All core application pages are protected by feature flags. When a flag is OFF, t
 
 The landing pages serve as marketing and feature demonstration pages, showcasing the application's capabilities. These pages include feature highlights for job tracking, company prep documents, and analytics, as well as a support chatbot that demonstrates LaunchDarkly AI Configs integration.
 
-The support chatbot (`/landing/support-bot`) is controlled by the `show-premium-feature-demo` flag, demonstrating how premium features can be gated behind feature flags and targeting rules. When accessed by a Free User, the page returns 404, while Premium and Beta Tester users can access the chatbot.
+The support chatbot (`/landing/support-bot`) is controlled by the `show-chatbot` flag, demonstrating how premium features can be gated behind feature flags and targeting rules. When accessed by a Free User, the page returns 404, while Premium and Beta Tester users can access the chatbot.
 
 ---
 
@@ -93,7 +93,7 @@ The admin dashboard includes a User Context Switcher that allows switching betwe
 
 ## Admin Control Panel
 
-The Admin Control Panel (`/admin`) provides comprehensive tools for managing and testing the LaunchDarkly integration. It includes a real-time view of all 30 feature flags with their current status, a User Context Switcher for testing targeting rules, a Targeting Demo Card that visually demonstrates flag-controlled features, and a Chat Test Interface for testing AI Config variations.
+The Admin Control Panel (`/admin`) provides comprehensive tools for managing and testing the LaunchDarkly integration. It includes a real-time view of all 38 feature flags with their current status, a User Context Switcher for testing targeting rules, a Targeting Demo Card that visually demonstrates flag-controlled features, and a Chat Test Interface for testing AI Config variations.
 
 The admin panel itself is controlled by the `show-admin-page` flag, demonstrating that even administrative tools can be feature-flagged. The panel updates in real-time as flags change in the LaunchDarkly dashboard, providing immediate visual feedback of flag states.
 
@@ -117,7 +117,7 @@ The application is built with Next.js 14 using the App Router, TypeScript for ty
 
 ## Key Strengths
 
-The project demonstrates comprehensive LaunchDarkly integration capabilities including 30 feature flags covering pages, components, and features; real-time updates via streaming without page reloads; production-safe access control with 404 fallbacks; comprehensive targeting with individual and rule-based targeting; full experimentation with metrics, experiments, and statistical analysis; AI Configs integration for dynamic LLM management; and a developer-friendly structure with TypeScript constants, custom hooks, and organized codebase.
+The project demonstrates comprehensive LaunchDarkly integration capabilities including 38 feature flags covering pages, components, features, business user mode, and admin docs; real-time updates via streaming without page reloads; production-safe access control with 404 fallbacks; comprehensive targeting with individual and rule-based targeting; full experimentation with metrics, experiments, and statistical analysis; AI Configs integration for dynamic LLM management; and a developer-friendly structure with TypeScript constants, custom hooks, and organized codebase.
 
 ---
 

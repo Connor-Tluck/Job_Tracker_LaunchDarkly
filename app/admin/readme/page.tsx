@@ -143,7 +143,7 @@ export default function ReadmePage() {
           
           <div className="prose prose-invert max-w-none">
             <p className="text-lg text-foreground-secondary mb-6">
-              This project started as a pre-built Job Search OS application - a comprehensive job tracking and management 
+              This project started as a pre-built Career Stack application - a comprehensive job tracking and management 
               platform built with Next.js 14, TypeScript, and Tailwind CSS. The application was then converted and enhanced 
               to demonstrate advanced LaunchDarkly integration by leveraging the LaunchDarkly SDK and CLI tools.
             </p>

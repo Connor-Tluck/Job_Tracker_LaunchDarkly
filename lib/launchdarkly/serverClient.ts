@@ -5,15 +5,16 @@
  * for use in API routes and server components.
  */
 
-import * as LaunchDarkly from 'launchdarkly-node-server-sdk';
+import { init, LDClient, LDContext } from "@launchdarkly/node-server-sdk";
+import { Observability } from "@launchdarkly/observability-node";
 
-let ldServerClient: LaunchDarkly.LDClient | null = null;
+let ldServerClient: LDClient | null = null;
 
 /**
  * Initialize and get the LaunchDarkly server client
  * Uses singleton pattern to reuse the same client instance
  */
-export async function getLDServerClient(): Promise<LaunchDarkly.LDClient | null> {
+export async function getLDServerClient(): Promise<LDClient | null> {
   if (ldServerClient) {
     return ldServerClient;
   }
@@ -31,8 +32,20 @@ export async function getLDServerClient(): Promise<LaunchDarkly.LDClient | null>
   }
 
   try {
-    const client = LaunchDarkly.init(sdkKey, {
-      // Optional: Add configuration options here
+    // Initialize the Node server-side SDK with the observability plugin so spans/telemetry can be exported to LaunchDarkly.
+    // See: https://launchdarkly.com/docs/sdk/observability/node-js
+    const client = init(sdkKey, {
+      plugins: [
+        new Observability({
+          serviceName: "career-stack-chat",
+          serviceVersion:
+            process.env.VERCEL_GIT_COMMIT_SHA ||
+            process.env.GIT_SHA ||
+            process.env.npm_package_version ||
+            "dev",
+          environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "local",
+        }),
+      ],
     });
 
     // Wait for client to be ready
@@ -59,7 +72,7 @@ export function convertToLDContext(userContext: {
   betaTester?: boolean;
   companySize?: string;
   industry?: string;
-}): LaunchDarkly.LDContext {
+}): LDContext {
   return {
     kind: 'user',
     key: userContext.key,

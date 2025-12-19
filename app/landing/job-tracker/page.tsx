@@ -5,8 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
-  FileText,
-  ArrowLeft,
   ArrowRight,
   Search,
   Filter,
@@ -42,20 +40,8 @@ export default function JobTrackerPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f242d_1px,transparent_1px),linear-gradient(to_bottom,#1f242d_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20" />
         <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28">
           <div className="max-w-5xl mx-auto">
-            <Link
-              href="/landing"
-              className="inline-flex items-center gap-2 text-sm text-foreground-secondary hover:text-foreground mb-8 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Link>
-            
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-                  <FileText className="w-4 h-4" />
-                  <span>Application Tracking</span>
-                </div>
                 <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight">
                   Never Lose Track
                   <br />

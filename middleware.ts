@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // No auth middleware needed - just pass through
+  // This demo does not do server-side auth or edge-time gating.
+  // Feature access is enforced at the page/navigation level using LaunchDarkly flag evaluation
+  // for the current user context (see `LaunchDarklyProvider` + `useFeatureFlag`).
   return NextResponse.next();
 }
 

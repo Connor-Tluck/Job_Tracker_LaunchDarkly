@@ -25,15 +25,23 @@ ChartJS.register(
   Legend
 );
 
-export function AnalyticsPanel({ snapshot }: { snapshot: AnalyticsSummary }) {
+export function AnalyticsPanel({
+  snapshot,
+  showTopMetrics = true,
+}: {
+  snapshot: AnalyticsSummary;
+  showTopMetrics?: boolean;
+}) {
   return (
     <div className="space-y-8">
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Applications Submitted" value={snapshot.totals.applied} />
-        <MetricCard label="Responses" value={snapshot.totals.responses} />
-        <MetricCard label="Interviews" value={snapshot.totals.interviews} />
-        <MetricCard label="Offers" value={snapshot.totals.offers} />
-      </section>
+      {showTopMetrics && (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Applications Submitted" value={snapshot.totals.applied} />
+          <MetricCard label="Responses" value={snapshot.totals.responses} />
+          <MetricCard label="Interviews" value={snapshot.totals.interviews} />
+          <MetricCard label="Offers" value={snapshot.totals.offers} />
+        </section>
+      )}
 
       <section className="grid gap-6 lg:grid-cols-3">
         <ChartCard title="Weekly Pipeline">
@@ -145,42 +153,13 @@ export function AnalyticsPanel({ snapshot }: { snapshot: AnalyticsSummary }) {
           />
         </ChartCard>
       </section>
-
-      <section className="rounded-2xl border border-border p-6 space-y-4">
-        <h3 className="text-lg font-semibold">Upcoming actions</h3>
-        <div className="space-y-3">
-          {snapshot.upcomingActions.map((action) => (
-            <div
-              key={`${action.jobId}-${action.date}`}
-              className="flex items-center justify-between rounded-xl border border-border-subtle bg-background-secondary/40 px-4 py-3"
-            >
-              <div>
-                <p className="text-sm font-semibold">{action.label}</p>
-                <p className="text-xs text-foreground-secondary">{action.date}</p>
-              </div>
-              <ButtonLink href={`/jobs/${action.jobId}`} label="Open job" />
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
-  );
-}
-
-function ButtonLink({ href, label }: { href: string; label: string }) {
-  return (
-    <a
-      className="text-xs font-semibold uppercase tracking-wide text-primary hover:underline"
-      href={href}
-    >
-      {label}
-    </a>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-border p-4">
+    <div className="rounded-2xl border border-border bg-background-secondary/40 p-4 shadow-sm">
       <p className="text-xs uppercase tracking-wide text-foreground-secondary">
         {label}
       </p>
@@ -197,7 +176,7 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <article className="rounded-2xl border border-border p-4 flex flex-col gap-4">
+    <article className="rounded-2xl border border-border bg-background-secondary/40 p-4 shadow-sm flex flex-col gap-4">
       <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground-secondary">
         {title}
       </h3>

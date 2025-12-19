@@ -73,7 +73,7 @@ npm install
 
 ### Step 5: Import LaunchDarkly Feature Flags
 
-**IMPORTANT:** The application requires **33 feature flags** to be created in your LaunchDarkly project. This step is mandatory.
+**IMPORTANT:** The application requires **38 feature flags** to be created in your LaunchDarkly project. This step is mandatory.
 
 **Using LaunchDarkly CLI (Recommended):**
 
@@ -152,24 +152,32 @@ After the import completes, review the log file in the `logs/` directory to veri
 
 If any flags failed to import or enable, you can manually create or enable them in the LaunchDarkly dashboard.
 
-### Step 8: Import LaunchDarkly AI Configs (For Chatbot)
+### Step 8: Configure LaunchDarkly AI Configs (For Chatbot)
 
 The chatbot feature uses LaunchDarkly AI Configs for dynamic prompt and model management. The export file is included in the repository.
 
-**Import AI Configs:**
+**Option A: Import AI Configs via script:**
 
 ```bash
 node scripts/import-ai-configs.js --project YOUR_PROJECT_KEY --export-file launchdarkly-ai-configs-export.json --environment production
 ```
 
-**Configure Targeting Manually:**
+**Option B: Configure via LaunchDarkly UI:**
 
-After import, configure targeting in the LaunchDarkly dashboard:
+1. **Navigate to your LaunchDarkly project → Feature Flags**
+2. **Find the flag that controls the chatbot** (typically `show-chatbot`)
+3. **Configure AI Configs in the flag settings:**
+   - Define prompts for different user segments
+   - Configure model behavior (e.g., friendly vs. grumpy chatbot)
+   - Set up targeting rules for different AI Config variations
+4. **See the Assignment Docs page** (`/admin/assignment-satisfaction`) or Examples page (`/admin/examples`) for detailed setup instructions
 
-1. Navigate to: `https://app.launchdarkly.com/YOUR_PROJECT_KEY/production/ai-configs/jobs-os-basic-chatbot/targeting`
+**Example targeting (after import):**
+
+1. Navigate to: `https://app.launchdarkly.com/YOUR_PROJECT_KEY/production/ai-configs/YOUR_AI_CONFIG_KEY/targeting`
 2. Enable the AI Config (toggle "AI Config is" to **On**)
-3. Add individual target: `user-001` → `combative_open_ai` variation
-4. Set default rule: `standard_open_ai` variation
+3. Add an individual target (example): `user-001` → `combative_open_ai` variation
+4. Set default rule (example): `standard_open_ai` variation
 
 **Without AI Configs configured:** The chatbot may return errors or not function as expected.
 
@@ -185,7 +193,7 @@ The application will start on `http://localhost:3000`.
 
 1. **Open your browser** and navigate to `http://localhost:3000`
 2. **Check LaunchDarkly Connection:** Open browser Developer Tools → Console tab. You should see LaunchDarkly connection messages (no errors).
-3. **Verify Feature Flags:** Visit `/admin` to see the flag status dashboard. All 33 flags should be visible.
+3. **Verify Feature Flags:** Visit `/admin` to see the flag status dashboard. All 38 flags should be visible.
 4. **Test User Switching:** Use the User Context Switcher on `/admin` to switch between demo users (Beta Tester, Premium User, Free User).
 
 ---
@@ -220,7 +228,7 @@ The application includes admin pages built into the core app that can be accesse
 - **Purpose:** Real-time flag monitoring, user context switching, and testing tools
 - **Route:** `/admin`
 - **Key Features:**
-  - View all 33 feature flags and their status
+  - View all 38 feature flags and their status
   - Switch between demo user profiles to test targeting
   - Test AI Config variations with the chat interface
   - Visual demonstration of flag-controlled features

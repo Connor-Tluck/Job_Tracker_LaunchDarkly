@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { getOrCreateUserContext, UserContext } from "@/lib/launchdarkly/userContext";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { UserMenu } from "@/components/user/UserMenu";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<UserContext | null>(null);
@@ -41,40 +42,19 @@ export function Header() {
     };
   }, []);
 
-  // Get user initial and color
-  const getUserDisplay = () => {
-    if (!currentUser) {
-      return { initial: 'C', color: 'bg-primary' };
+  const getSubscriptionTierLabel = (): string => {
+    if (!currentUser) return "Free";
+
+    // For demo purposes, Beta users should display as "Beta" (even if their tier is premium)
+    if (currentUser.role === "beta-tester" || currentUser.betaTester) {
+      return "Beta";
     }
 
-    // Get first letter of user's name
-    const initial = currentUser.name.charAt(0).toUpperCase();
-    
-    // Assign distinct colors based on user key for the 3 demo users
-    let color = 'bg-primary';
-    switch (currentUser.key) {
-      case 'user-001': // Beta Tester
-        color = 'bg-blue-500'; // Blue
-        break;
-      case 'user-002': // Premium User
-        color = 'bg-purple-500'; // Purple
-        break;
-      case 'user-003': // Free User
-        color = 'bg-orange-500'; // Orange
-        break;
-      default:
-        // Fallback for any other users
-        if (currentUser.subscriptionTier === 'premium') {
-          color = 'bg-success';
-        } else if (currentUser.subscriptionTier === 'free') {
-          color = 'bg-foreground-secondary';
-        }
-    }
-    
-    return { initial, color };
+    const tier = currentUser.subscriptionTier;
+    return tier.charAt(0).toUpperCase() + tier.slice(1);
   };
 
-  const userDisplay = getUserDisplay();
+  const subscriptionTierLabel = getSubscriptionTierLabel();
 
   return (
     <header className="h-16 bg-background-secondary border-b border-border flex items-center justify-between px-6">
@@ -88,6 +68,13 @@ export function Header() {
 
       <div className="flex items-center space-x-4">
         <nav className="hidden md:flex items-center space-x-4">
+          <span
+            className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground-secondary"
+            aria-label={`Subscription tier: ${subscriptionTierLabel}`}
+            title={`Subscription tier: ${subscriptionTierLabel}`}
+          >
+            {subscriptionTierLabel}
+          </span>
           <Link
             href="/"
             className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
@@ -97,16 +84,12 @@ export function Header() {
         </nav>
 
         <div className="flex items-center space-x-2">
+          <ThemeToggle />
           <button className="p-2 text-foreground-secondary hover:text-foreground hover:bg-background-tertiary rounded-lg transition-colors relative">
             <Settings className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
           </button>
-          <button className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center text-white font-medium hover:opacity-80 transition-all",
-            userDisplay.color
-          )}>
-            {userDisplay.initial}
-          </button>
+          <UserMenu align="right" variant="icon" />
         </div>
       </div>
     </header>

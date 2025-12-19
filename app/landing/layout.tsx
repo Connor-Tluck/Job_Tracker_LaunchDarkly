@@ -4,17 +4,20 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { FileText, MessageCircle } from "lucide-react";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
-import { cn } from "@/lib/utils";
 import { useFlags } from "launchdarkly-react-client-sdk";
 import { useState, useEffect, useRef } from "react";
 import { useFlagsReady } from "@/hooks/useFlagsReady";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { UserMenu } from "@/components/user/UserMenu";
 
 // Stable navigation component - only updates when flag value actually changes
 function Navigation() {
   const flags = useFlags();
   const flagsReady = useFlagsReady();
   const [showSupportBot, setShowSupportBot] = useState(false);
-  const flagKey = FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
+  // Support Bot access is controlled by show-chatbot.
+  // This ensures LaunchDarkly targeting/experiments on `show-chatbot` directly control nav visibility.
+  const flagKey = FLAG_KEYS.SHOW_CHATBOT;
   const previousValueRef = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
@@ -52,6 +55,7 @@ function Navigation() {
       >
         Analytics
       </Link>
+      {/* Wait for flags to be ready so we don't "flash" gated links while LD bootstraps/identifies. */}
       {flagsReady && showSupportBot && (
         <Link
           href="/landing/support-bot"
@@ -81,12 +85,14 @@ export default function LandingLayout({
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
               </div>
-              <span className="font-semibold text-lg">Job Search OS</span>
+              <span className="font-semibold text-lg">Career Stack</span>
             </Link>
 
             <Navigation />
 
             <div className="flex items-center gap-3">
+              <ThemeToggle className="hidden sm:inline-flex" />
+              <UserMenu align="right" variant="pill" className="hidden sm:inline-flex" />
               <Link href="/">
                 <Button variant="primary" size="sm">
                   Open App
@@ -109,7 +115,7 @@ export default function LandingLayout({
                 <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-semibold">Job Search OS</span>
+                <span className="font-semibold">Career Stack</span>
               </div>
               <p className="text-sm text-foreground-secondary">
                 Your complete job search management platform. Track applications, prepare for
@@ -188,7 +194,7 @@ export default function LandingLayout({
 
           <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-foreground-muted">
-              © {new Date().getFullYear()} Job Search OS. All rights reserved.
+              © {new Date().getFullYear()} Career Stack. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm text-foreground-secondary">
               <a href="#" className="hover:text-foreground transition-colors">

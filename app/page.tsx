@@ -1,19 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { jobs, analyticsSummary, starStories } from "@/lib/mock-data";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
+import { PipelineOverviewCard } from "@/components/dashboard/PipelineOverviewCard";
+import { DashboardCalendarCard } from "@/components/dashboard/DashboardCalendarCard";
 import {
-  TrendingUp,
   Calendar,
-  CheckCircle2,
-  Clock,
   ArrowRight,
-  FileText,
-  Star,
   AlertCircle,
 } from "lucide-react";
 import { useMemo, useEffect } from "react";
@@ -22,32 +19,29 @@ import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
 import { trackPageView } from "@/lib/launchdarkly/tracking";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 export default function Home() {
-  // Page access check
+  // All hooks must be called before any conditional returns
+  const router = useRouter();
+  const flagsReady = useFlagsReady();
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_PAGE, true);
+  const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
   const ldClient = useLDClient();
   const userContext = getOrCreateUserContext();
 
-  // Track page view
-  useEffect(() => {
-    if (canAccess) {
-      trackPageView(ldClient, userContext, "dashboard");
-    }
-  }, [ldClient, userContext, canAccess]);
-
-  if (!canAccess) {
-    return notFound();
-  }
-
-  // Component visibility flags
-  const showHero = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_HERO, true);
+  // Component visibility flags (must be declared before any early returns)
   const showMetrics = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_METRICS, true);
+  const showPipelineStatus = useFeatureFlag(
+    FLAG_KEYS.SHOW_DASHBOARD_PIPELINE_STATUS,
+    true
+  );
   const showRecentJobs = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_RECENT_JOBS, true);
   const showUpcomingActions = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_UPCOMING_ACTIONS, true);
   const showQuickLinks = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_QUICK_LINKS, true);
   const showFollowUpsAlert = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_FOLLOW_UPS_ALERT, true);
 
+  // Derived data (hooks must be declared before any early returns)
   const recentJobs = useMemo(() => jobs.slice(0, 5), []);
   const upcomingActions = analyticsSummary.upcomingActions.slice(0, 3);
   const responseRate = Math.round(
@@ -56,72 +50,105 @@ export default function Home() {
   const activeInterviews = jobs.filter((j) => j.phase === "Interview" || j.phase === "Phone Screen")
     .length;
   const followUpsDue = jobs.filter((j) => j.nextStep && j.nextStep.includes("follow")).length;
+  const pipelineItems = useMemo(() => {
+    const applied = jobs.filter((j) => j.phase === "Applied").length;
+    const phoneScreen = jobs.filter((j) => j.phase === "Phone Screen").length;
+    const interview = jobs.filter((j) => j.phase === "Interview").length;
+    const offer = jobs.filter((j) => j.phase === "Offer").length;
+
+    return [
+      { label: "Applied", value: applied, colorClass: "bg-foreground-secondary" },
+      { label: "Phone Screen", value: phoneScreen, colorClass: "bg-warning" },
+      { label: "Interview", value: interview, colorClass: "bg-primary" },
+      { label: "Offer", value: offer, colorClass: "bg-success" },
+    ];
+  }, [jobs]);
+
+  // Track page view
+  useEffect(() => {
+    if (flagsReady && canAccess && !isBusinessMode) {
+      trackPageView(ldClient, userContext, "dashboard");
+    }
+  }, [ldClient, userContext, canAccess, flagsReady, isBusinessMode]);
+
+  // Business users should land on the recruiting experience by default.
+  // We redirect instead of 404 to avoid a confusing default experience.
+  useEffect(() => {
+    if (!flagsReady) return;
+    if (isBusinessMode) {
+      router.replace("/business/candidates");
+    }
+  }, [flagsReady, isBusinessMode, router]);
+
+  // Prevent UI flash while flags initialize (and enforce role-based app mode)
+  if (!flagsReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-foreground-secondary">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // For business users, show a lightweight loading state while redirecting.
+  if (isBusinessMode) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-foreground-secondary">Redirecting to Recruiting…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canAccess) {
+    return notFound();
+  }
 
   return (
     <div className="space-y-8">
-      {showHero && (
-        <section className="rounded-3xl border border-border bg-gradient-to-br from-background-secondary to-background-tertiary p-8 lg:p-10">
-        <div className="max-w-3xl space-y-6">
-          <p className="text-sm uppercase tracking-[0.4em] text-foreground-secondary">
-            Job Search OS
-          </p>
-          <h1 className="text-4xl lg:text-5xl font-semibold">
-            Track applications, prep smarter, and keep interview stories ready in one workspace.
-          </h1>
-          <p className="text-lg text-foreground-secondary">
-            Your centralized hub for managing the entire job search pipeline from application to offer.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/jobs"
-              className="px-5 py-3 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors"
-            >
-              View Job Tracker →
-            </Link>
-            <Link
-              href="/analytics"
-              className="px-5 py-3 rounded-full border border-border text-sm font-semibold hover:bg-background-tertiary transition-colors"
-            >
-              See Analytics
-            </Link>
-          </div>
-        </div>
-      </section>
-      )}
-
-      {showMetrics && (
-        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            icon={FileText}
-            label="Applications"
-            value={jobs.length}
-            change="+3 this week"
-            trend="up"
-          />
-          <MetricCard
-            icon={CheckCircle2}
-            label="Response Rate"
-            value={`${responseRate}%`}
-            change={`${jobs.filter((j) => j.response === "Yes").length} responses`}
-          />
-          <MetricCard
-            icon={Star}
-            label="Active Interviews"
-            value={activeInterviews}
-            change="Phone screens + interviews"
-          />
-          <MetricCard
-            icon={Clock}
-            label="Follow-ups Due"
-            value={followUpsDue}
-            change="Action items pending"
-            trend={followUpsDue > 0 ? "alert" : undefined}
+      {(showMetrics || showPipelineStatus) && (
+        <section>
+          <PipelineOverviewCard
+            subtitle={`${jobs.length} active applications`}
+            metrics={
+              showMetrics
+                ? [
+                    {
+                      label: "Applications",
+                      value: jobs.length,
+                      subtext: "+3 this week",
+                      trend: "up",
+                    },
+                    {
+                      label: "Response Rate",
+                      value: `${responseRate}%`,
+                      subtext: `${jobs.filter((j) => j.response === "Yes").length} responses`,
+                    },
+                    {
+                      label: "Active Interviews",
+                      value: activeInterviews,
+                      subtext: "Phone screens + interviews",
+                    },
+                    {
+                      label: "Follow-ups Due",
+                      value: followUpsDue,
+                      subtext: "Action items pending",
+                      trend: followUpsDue > 0 ? "alert" : undefined,
+                    },
+                  ]
+                : undefined
+            }
+            statusItems={showPipelineStatus ? pipelineItems : undefined}
           />
         </section>
       )}
 
       {(showRecentJobs || showUpcomingActions) && (
-        <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+        <div className={`grid gap-6 ${showRecentJobs ? "lg:grid-cols-[2fr,1fr]" : "lg:grid-cols-1"}`}>
           {showRecentJobs && (
             <section className="space-y-4">
               <div className="flex items-center justify-between">
@@ -165,45 +192,57 @@ export default function Home() {
             </section>
           )}
 
-          {showUpcomingActions && (
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Upcoming Actions</h2>
-                <Link
-                  href="/analytics"
-                  className="text-sm text-primary hover:underline flex items-center gap-1"
-                >
-                  View all <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="space-y-3">
-                {upcomingActions.length > 0 ? (
-                  upcomingActions.map((action, idx) => (
-                    <Card key={idx} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">{action.label}</p>
-                          <p className="text-xs text-foreground-secondary flex items-center gap-2">
-                            <Calendar className="w-3 h-3" />
-                            {action.date}
-                          </p>
+          <div className="space-y-6">
+            {showUpcomingActions && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Upcoming Actions</h2>
+                  <Link
+                    href="/analytics"
+                    className="text-sm text-primary hover:underline flex items-center gap-1"
+                  >
+                    View all <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {upcomingActions.length > 0 ? (
+                    upcomingActions.map((action, idx) => (
+                      <Card key={idx} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">{action.label}</p>
+                            <p className="text-xs text-foreground-secondary flex items-center gap-2">
+                              <Calendar className="w-3 h-3" />
+                              {action.date}
+                            </p>
+                          </div>
+                          <Link href={`/jobs/${action.jobId}`}>
+                            <Button variant="ghost" size="xs">
+                              Open
+                            </Button>
+                          </Link>
                         </div>
-                        <Link href={`/jobs/${action.jobId}`}>
-                          <Button variant="ghost" size="xs">
-                            Open
-                          </Button>
-                        </Link>
-                      </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <Card className="p-4 text-sm text-foreground-secondary">
+                      No upcoming actions scheduled
                     </Card>
-                  ))
-                ) : (
-                  <Card className="p-4 text-sm text-foreground-secondary">
-                    No upcoming actions scheduled
-                  </Card>
-                )}
-              </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <DashboardCalendarCard
+                events={analyticsSummary.upcomingActions.map((a) => ({
+                  date: a.date,
+                  label: a.label,
+                  href: `/jobs/${a.jobId}`,
+                }))}
+              />
             </section>
-          )}
+          </div>
         </div>
       )}
 
@@ -228,37 +267,6 @@ export default function Home() {
         </Card>
       )}
     </div>
-  );
-}
-
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-  change,
-  trend,
-}: {
-  icon: any;
-  label: string;
-  value: string | number;
-  change?: string;
-  trend?: "up" | "down" | "alert";
-}) {
-  return (
-    <Card className="p-4 space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-wide text-foreground-secondary">{label}</p>
-        <Icon
-          className={`w-4 h-4 ${
-            trend === "alert" ? "text-warning" : trend === "up" ? "text-success" : "text-foreground-secondary"
-          }`}
-        />
-      </div>
-      <p className="text-3xl font-semibold">{value}</p>
-      {change && (
-        <p className="text-xs text-foreground-secondary">{change}</p>
-      )}
-    </Card>
   );
 }
 

@@ -7,6 +7,9 @@ import { FLAG_KEYS } from '@/lib/launchdarkly/flags';
 /**
  * Hook to check if LaunchDarkly flags are ready/loaded
  * Prevents flash of content by waiting for flags to be available before rendering
+ *
+ * Interview note: LD React SDK doesn't give a simple "isReady" boolean from `useFlags()`,
+ * so we use a tiny heuristic: "do we see any known keys yet?".
  * 
  * @returns boolean - true when flags are ready, false otherwise
  */

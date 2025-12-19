@@ -22,7 +22,7 @@ export function Button({
       "bg-background-tertiary text-foreground border border-border-subtle hover:bg-background-elevated",
     primary: "bg-primary text-white hover:bg-primary-hover",
     outline:
-      "border border-border-subtle text-foreground hover:border-foreground-subtle hover:bg-background-tertiary",
+      "bg-background-secondary/60 border border-border text-foreground shadow-sm hover:bg-background-secondary hover:border-foreground-subtle",
     ghost:
       "text-foreground-secondary hover:text-foreground hover:bg-background-tertiary",
     danger: "bg-danger/90 text-white hover:bg-danger",

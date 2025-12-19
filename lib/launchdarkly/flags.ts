@@ -8,7 +8,7 @@
  */
 
 export const FLAG_KEYS = {
-  // Page Access Flags (12 flags)
+  // Page Access Flags
   SHOW_DASHBOARD_PAGE: 'show-dashboard-page',
   SHOW_JOBS_PAGE: 'show-jobs-page',
   SHOW_JOB_DETAIL_PAGE: 'show-job-detail-page',
@@ -21,10 +21,12 @@ export const FLAG_KEYS = {
   SHOW_LANDING_JOB_TRACKER: 'show-landing-job-tracker',
   SHOW_LANDING_PREP_HUB: 'show-landing-prep-hub',
   SHOW_LANDING_ANALYTICS: 'show-landing-analytics',
+  SHOW_CHATBOT: 'show-chatbot',
 
-  // Dashboard Component Flags (6 flags)
+  // Dashboard Component Flags (7 flags)
   SHOW_DASHBOARD_HERO: 'show-dashboard-hero',
   SHOW_DASHBOARD_METRICS: 'show-dashboard-metrics',
+  SHOW_DASHBOARD_PIPELINE_STATUS: 'show-dashboard-pipeline-status',
   SHOW_DASHBOARD_RECENT_JOBS: 'show-dashboard-recent-jobs',
   SHOW_DASHBOARD_UPCOMING_ACTIONS: 'show-dashboard-upcoming-actions',
   SHOW_DASHBOARD_QUICK_LINKS: 'show-dashboard-quick-links',
@@ -45,9 +47,16 @@ export const FLAG_KEYS = {
   SHOW_JOB_STAR_STORIES: 'show-job-star-stories',
   SHOW_JOB_METRICS_CARDS: 'show-job-metrics-cards',
 
-  // Admin & System Flags (2 flags)
+  // Admin & System Flags (4 flags)
   SHOW_ADMIN_PAGE: 'show-admin-page',
   SHOW_ASSIGNMENT_SATISFACTION_PAGE: 'show-assignment-satisfaction-page',
+  SHOW_ADMIN_QUICK_REFERENCE_PAGE: 'show-admin-quick-reference-page',
+  SHOW_ADMIN_EXAMPLES_PAGE: 'show-admin-examples-page',
+
+  // Business User Flags (3 flags)
+  SHOW_BUSINESS_USER_MODE: 'show-business-user-mode',
+  SHOW_CANDIDATES_PAGE: 'show-candidates-page',
+  SHOW_APPLICANT_TRACKER_PAGE: 'show-applicant-tracker-page',
 } as const;
 
 export type FlagKey = typeof FLAG_KEYS[keyof typeof FLAG_KEYS];
@@ -128,6 +137,12 @@ export const FLAG_METADATA = {
     category: 'Page Access',
     default: true,
   },
+  [FLAG_KEYS.SHOW_CHATBOT]: {
+    name: 'Show Chatbot',
+    description: 'Controls access to the Support Bot page (/landing/support-bot) and its navigation link',
+    category: 'Page Access',
+    default: false,
+  },
   [FLAG_KEYS.SHOW_DASHBOARD_HERO]: {
     name: 'Show Dashboard Hero',
     description: 'Controls visibility of the hero section on the dashboard',
@@ -137,6 +152,12 @@ export const FLAG_METADATA = {
   [FLAG_KEYS.SHOW_DASHBOARD_METRICS]: {
     name: 'Show Dashboard Metrics',
     description: 'Controls visibility of the metric cards section on the dashboard',
+    category: 'Dashboard Components',
+    default: true,
+  },
+  [FLAG_KEYS.SHOW_DASHBOARD_PIPELINE_STATUS]: {
+    name: 'Show Dashboard Pipeline Status',
+    description: 'Controls visibility of the pipeline status card on the dashboard',
     category: 'Dashboard Components',
     default: true,
   },
@@ -240,6 +261,36 @@ export const FLAG_METADATA = {
     name: 'Show Assignment Satisfaction Page',
     description: 'Controls access to the assignment satisfaction documentation page (/admin/assignment-satisfaction)',
     category: 'Admin & System',
+    default: true,
+  },
+  [FLAG_KEYS.SHOW_ADMIN_QUICK_REFERENCE_PAGE]: {
+    name: 'Show Admin Quick Reference Page',
+    description: 'Controls access to the admin quick reference page (/admin/quick-reference) for interview prep and codebase pointers.',
+    category: 'Admin & System',
+    default: true,
+  },
+  [FLAG_KEYS.SHOW_ADMIN_EXAMPLES_PAGE]: {
+    name: 'Show Admin Examples Page',
+    description: 'Controls access to the admin examples page (/admin/examples) with visual walkthroughs.',
+    category: 'Admin & System',
+    default: true,
+  },
+  [FLAG_KEYS.SHOW_BUSINESS_USER_MODE]: {
+    name: 'Show Business User Mode',
+    description: 'Enables Business/Recruiter mode for candidate sourcing and applicant tracking. When enabled, users see a recruiting-focused interface instead of job seeker interface.',
+    category: 'Business User',
+    default: false,
+  },
+  [FLAG_KEYS.SHOW_CANDIDATES_PAGE]: {
+    name: 'Show Candidates Page',
+    description: 'Controls access to the candidate search and sourcing page (/business/candidates). Only visible to Business tier users.',
+    category: 'Business User',
+    default: true,
+  },
+  [FLAG_KEYS.SHOW_APPLICANT_TRACKER_PAGE]: {
+    name: 'Show Applicant Tracker Page',
+    description: 'Controls access to the applicant tracking pipeline page (/business/applicants). Only visible to Business tier users.',
+    category: 'Business User',
     default: true,
   },
 } as const;

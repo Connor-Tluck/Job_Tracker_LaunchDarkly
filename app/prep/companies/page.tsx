@@ -10,10 +10,13 @@ import Link from "next/link";
 import { PrepDocModal } from "@/components/prep/PrepDocModal";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 export default function CompanyPrepListPage() {
   // All hooks must be called before any conditional returns
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_COMPANY_PREP_PAGE, true);
+  const flagsReady = useFlagsReady();
+  const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
   const [prepDocs, setPrepDocs] = useState<Record<string, PrepDoc>>(initialPrepDocs);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,6 +51,21 @@ export default function CompanyPrepListPage() {
   }, [prepDocs, search]);
 
   // Page access check (after all hooks)
+  if (!flagsReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-foreground-secondary">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isBusinessMode) {
+    return notFound();
+  }
+
   if (!canAccess) {
     return notFound();
   }
@@ -176,25 +194,36 @@ export default function CompanyPrepListPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+            <div
+              className="flex items-center gap-2 pt-2 border-t border-border overflow-x-auto"
+              style={{ scrollbarWidth: "none" as any }}
+            >
+              <style jsx>{`
+                div::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
               {doc.productPillars.slice(0, 3).map((pillar) => (
                 <span
                   key={pillar}
-                  className="text-xs px-2 py-1 rounded-full bg-background-tertiary border border-border"
+                  title={pillar}
+                  className="flex-shrink-0 text-xs px-2 py-1 rounded-full bg-background-tertiary border border-border whitespace-nowrap max-w-[14rem] truncate"
                 >
-                  {pillar.substring(0, 20)}
-                  {pillar.length > 20 ? "..." : ""}
+                  {pillar}
                 </span>
               ))}
               {doc.productPillars.length > 3 && (
-                <span className="text-xs text-foreground-secondary">
+                <span className="flex-shrink-0 text-xs text-foreground-secondary whitespace-nowrap">
                   +{doc.productPillars.length - 3} more
                 </span>
               )}
             </div>
 
             <div className="flex gap-2 pt-2 border-t border-border">
-              <Link href={`/prep/companies/${doc.id}`} className="flex-1">
+              <Link
+                href={relatedJob ? `/jobs/${relatedJob.id}` : `/jobs/${doc.id.replace("prep-", "")}`}
+                className="flex-1"
+              >
                 <Button variant="primary" size="sm" className="w-full">
                   Open Prep Doc
                 </Button>

@@ -25,7 +25,7 @@ export function ChatTestCard() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your AI-powered support assistant. Test different user behaviors by switching users above, then ask me questions about Job Search OS!",
+      content: "Hello! I'm your AI-powered support assistant. Test different user behaviors by switching users above, then ask me questions about Career Stack!",
       timestamp: new Date(),
     },
   ]);
@@ -178,7 +178,7 @@ export function ChatTestCard() {
       {
         id: "1",
         role: "assistant",
-        content: "Chat cleared! Ask me anything about Job Search OS.",
+        content: "Chat cleared! Ask me anything about Career Stack.",
         timestamp: new Date(),
       },
     ]);

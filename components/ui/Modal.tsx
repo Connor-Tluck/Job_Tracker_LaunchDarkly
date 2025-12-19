@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,12 @@ export function Modal({
   size = "md",
   showCloseButton = true,
 }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -45,7 +52,7 @@ export function Modal({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
   const sizeClasses = {
     sm: "max-w-md",
@@ -54,13 +61,13 @@ export function Modal({
     xl: "max-w-4xl",
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/40 dark:bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
@@ -94,6 +101,8 @@ export function Modal({
         <div className="p-6">{children}</div>
       </div>
     </div>
+    ,
+    document.body
   );
 }
 

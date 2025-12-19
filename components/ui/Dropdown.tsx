@@ -43,6 +43,7 @@ export function Dropdown({ trigger, items, align = "left" }: DropdownProps) {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2"
       >

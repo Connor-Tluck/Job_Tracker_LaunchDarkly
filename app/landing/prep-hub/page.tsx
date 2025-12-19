@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
   Target,
-  ArrowLeft,
   ArrowRight,
   FileText,
   Star,
@@ -35,19 +34,7 @@ export default function PrepHubPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-transparent" />
         <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28">
           <div className="max-w-5xl mx-auto text-center">
-            <Link
-              href="/landing"
-              className="inline-flex items-center gap-2 text-sm text-foreground-secondary hover:text-foreground mb-8 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Link>
-            
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 text-primary text-sm font-medium">
-                <Target className="w-4 h-4" />
-                <span>Interview Preparation</span>
-              </div>
               <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight">
                 Walk Into Every Interview
                 <br />

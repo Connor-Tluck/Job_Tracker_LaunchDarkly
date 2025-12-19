@@ -9,12 +9,15 @@ export interface UserContext {
   key: string;
   email: string;
   name: string;
-  role: 'user' | 'admin' | 'beta-tester';
-  subscriptionTier: 'free' | 'premium' | 'enterprise';
+  // These attributes are the "inputs" to LaunchDarkly targeting rules.
+  // We also reuse them for client-side gating decisions (upgrade vs 404).
+  role: 'user' | 'admin' | 'beta-tester' | 'business';
+  subscriptionTier: 'free' | 'premium' | 'enterprise' | 'business';
   signupDate: string; // ISO date string
   betaTester: boolean;
   companySize?: 'startup' | 'small' | 'medium' | 'large';
   industry?: string;
+  isBusinessUser?: boolean;
 }
 
 const DEMO_USERS: UserContext[] = [
@@ -51,11 +54,24 @@ const DEMO_USERS: UserContext[] = [
     companySize: 'startup',
     industry: 'Retail',
   },
+  {
+    key: 'user-004',
+    email: 'recruiter@techcorp.com',
+    name: 'Business User',
+    role: 'business',
+    subscriptionTier: 'business',
+    signupDate: '2024-02-01T00:00:00Z',
+    betaTester: false,
+    companySize: 'large',
+    industry: 'Technology',
+    isBusinessUser: true,
+  },
 ];
 
 export function getOrCreateUserContext(): UserContext {
   if (typeof window === 'undefined') {
     // Server-side: return default user
+    // (Most pages are client components; this is mainly a safe fallback for SSR/import-time usage.)
     return DEMO_USERS[0];
   }
 
@@ -70,6 +86,7 @@ export function getOrCreateUserContext(): UserContext {
   }
 
   // Create new demo user (randomly select one)
+  // This makes the demo more interesting: different users land in different LD segments/variations.
   const user = DEMO_USERS[Math.floor(Math.random() * DEMO_USERS.length)];
   localStorage.setItem('ld-user-context', JSON.stringify(user));
   return user;

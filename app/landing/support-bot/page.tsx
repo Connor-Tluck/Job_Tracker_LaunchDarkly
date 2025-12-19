@@ -5,7 +5,18 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { MessageCircle, Send, Bot, User, Sparkles } from "lucide-react";
+import Link from "next/link";
+import {
+  MessageCircle,
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  Lock,
+  ArrowRight,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
@@ -20,6 +31,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  feedback?: "up" | "down" | null;
 }
 
 export default function SupportBotPage() {
@@ -27,12 +39,13 @@ export default function SupportBotPage() {
   const ldClient = useLDClient();
   const userContext = getOrCreateUserContext();
   const flagsReady = useFlagsReady();
-  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO, false);
+  // Access to the Support Bot is controlled by the show-chatbot feature flag.
+  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_CHATBOT, false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your AI-powered support assistant for Job Search OS. I can help answer questions about our features, pricing, getting started, troubleshooting, and best practices. What would you like to know?",
+      content: "Hello! I'm your AI-powered support assistant for Career Stack. I can help answer questions about our features, pricing, getting started, troubleshooting, and best practices. What would you like to know?",
       timestamp: new Date(),
     },
   ]);
@@ -44,18 +57,21 @@ export default function SupportBotPage() {
 
   // Track page view for experiment
   useEffect(() => {
-    if (flagsReady && canAccess && ldClient) {
-      trackEvent(ldClient, userContext, "support-bot-page-view");
+    if (flagsReady && canAccess) {
+      trackEvent(ldClient ?? null, userContext, "support-bot-page-view");
     }
   }, [ldClient, userContext, flagsReady, canAccess]);
 
   const scrollToBottom = (smooth = true) => {
-    if (!messagesContainerRef.current || !shouldAutoScrollRef.current) return;
-    
+    const container = messagesContainerRef.current;
+    if (!container || !shouldAutoScrollRef.current) return;
+
+    // Important: scroll the *messages container* only. `scrollIntoView()` can scroll the whole document,
+    // which is what causes the "jump back to the top of the page" behavior on send.
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ 
-        behavior: smooth ? "smooth" : "auto", 
-        block: "end" 
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
       });
     }, smooth ? 150 : 0);
   };
@@ -95,9 +111,65 @@ export default function SupportBotPage() {
     );
   }
 
-  // Check access - if flag is false, user doesn't have access (404)
-  // The flag value already reflects LaunchDarkly targeting (individual or rule-based)
+  // Check access:
+  // - If flag is false and user is free, show an upgrade/premium upsell page.
+  // - Otherwise, preserve "not found" behavior for non-free users or other denied contexts.
+  // The flag value already reflects LaunchDarkly targeting/experimentation.
   if (!canAccess) {
+    if (userContext?.subscriptionTier === "free") {
+      const feature = "support-bot";
+      const returnTo = "/landing/support-bot";
+      return (
+        <div className="min-h-screen bg-background">
+          <div className="max-w-4xl mx-auto px-6 py-16">
+            <Card className="p-8">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-6 h-6 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-semibold">Support Bot is a Premium feature</h1>
+                  <p className="text-sm text-foreground-secondary">
+                    Upgrade to Premium to unlock instant AI-powered help for Career Stack—answers about
+                    features, getting started, troubleshooting, and best practices.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <Link
+                  href={`/signup?plan=premium&feature=${encodeURIComponent(
+                    feature
+                  )}&returnTo=${encodeURIComponent(returnTo)}`}
+                >
+                  <Button variant="primary" size="lg" className="w-full">
+                    Sign up for Premium
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+                <Link href="/landing">
+                  <Button variant="outline" size="lg" className="w-full">
+                    Back to Landing
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-border bg-background-secondary p-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="w-4 h-4 text-foreground-secondary" />
+                  What you’ll get with Premium
+                </div>
+                <ul className="mt-2 space-y-1 text-sm text-foreground-secondary list-disc pl-5">
+                  <li>Instant answers about features, setup, and troubleshooting</li>
+                  <li>Guidance tailored to your workflow (job tracker, prep hub, analytics)</li>
+                  <li>Faster resolution without waiting on human support</li>
+                </ul>
+              </div>
+            </Card>
+          </div>
+        </div>
+      );
+    }
     return notFound();
   }
 
@@ -111,27 +183,38 @@ export default function SupportBotPage() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
     const currentInput = input.trim();
     setInput("");
     setIsLoading(true);
 
     // Track message sent for experiment
-    trackEvent(ldClient, userContext, "support-bot-message-sent", {
+    trackEvent(ldClient ?? null, userContext, "support-bot-message-sent", {
       message: currentInput,
     });
 
+    // Streaming UI strategy:
+    // - Insert an empty assistant "placeholder" message immediately
+    // - As chunks arrive, we update that message's `content` in place (avoids re-ordering / flicker)
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantPlaceholder: Message = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+      feedback: null,
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantPlaceholder]);
+
     try {
       // Prepare messages for API (convert to OpenAI format)
+      // Note: we include `userMessage` explicitly here instead of relying on state,
+      // because `setMessages` is async and `messages` may be stale in this closure.
       const apiMessages = [
-        ...messages.map((msg) => ({
+        ...[...messages, userMessage].map((msg) => ({
           role: msg.role,
           content: msg.content,
         })),
-        {
-          role: "user" as const,
-          content: currentInput,
-        },
       ];
 
       // Call OpenAI API with user context for LaunchDarkly AI Config
@@ -143,6 +226,7 @@ export default function SupportBotPage() {
         body: JSON.stringify({
           messages: apiMessages,
           userContext: userContext, // Add user context for LaunchDarkly targeting
+          stream: true,
         }),
       });
 
@@ -150,50 +234,104 @@ export default function SupportBotPage() {
         throw new Error(`API error: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      let fullText = "";
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.message || "I apologize, but I couldn't generate a response. Please try again.",
-        timestamp: new Date(),
-      };
+      if (contentType.includes("application/json")) {
+        const data = await response.json();
+        fullText =
+          data.message ||
+          "I apologize, but I couldn't generate a response. Please try again.";
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessageId ? { ...m, content: fullText } : m
+          )
+        );
+      } else {
+        if (!response.body) {
+          throw new Error("Streaming response body is not available.");
+        }
 
-      setMessages((prev) => [...prev, assistantMessage]);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          if (chunk) {
+            fullText += chunk;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessageId ? { ...m, content: fullText } : m
+              )
+            );
+          }
+        }
+
+        // flush remaining buffered bytes
+        const tail = decoder.decode();
+        if (tail) {
+          fullText += tail;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMessageId ? { ...m, content: fullText } : m
+            )
+          );
+        }
+      }
 
       // Track response received for experiment
-      trackEvent(ldClient, userContext, "support-bot-response-received", {
-        responseLength: assistantMessage.content.length,
+      trackEvent(ldClient ?? null, userContext, "support-bot-response-received", {
+        responseLength: fullText.length,
       });
     } catch (error) {
       console.error("Error calling OpenAI API:", error);
       
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: assistantMessageId,
         role: "assistant",
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment, or contact our support team for assistance.",
+        content:
+          "I'm sorry, I'm having trouble connecting right now. Please try again in a moment, or contact our support team for assistance.",
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === assistantMessageId ? errorMessage : m))
+      );
 
       // Track error for experiment
-      if (ldClient) {
-        ldClient.track("support-bot-error", userContext, {
-          error: error instanceof Error ? error.message : "Unknown error",
-          timestamp: new Date().toISOString(),
-        });
-      }
+      trackEvent(ldClient ?? null, userContext, "support-bot-error", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleFeedback = (messageId: string, feedback: "up" | "down") => {
+    const target = messages.find((m) => m.id === messageId);
+    if (!target || target.role !== "assistant") return;
+
+    const current = target.feedback ?? null;
+    const next = current === feedback ? null : feedback;
+
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, feedback: next } : m))
+    );
+
+    trackEvent(ldClient ?? null, userContext, "support-bot-response-rated", {
+      messageId,
+      feedback: next,
+      responseLength: target.content.length,
+    });
   };
 
   return (
@@ -208,7 +346,7 @@ export default function SupportBotPage() {
             <div>
               <h1 className="text-3xl font-semibold">Support Bot</h1>
               <p className="text-foreground-secondary mt-1">
-                Get instant answers about Job Search OS
+                Get instant answers about Career Stack
               </p>
             </div>
           </div>
@@ -221,7 +359,7 @@ export default function SupportBotPage() {
                 <p className="text-sm font-medium mb-1">Premium Feature</p>
                 <p className="text-xs text-foreground-secondary">
                   This support bot is available to users with premium access. Ask me anything about
-                  Job Search OS features, pricing, getting started, or troubleshooting. I&apos;m here
+                  Career Stack features, pricing, getting started, or troubleshooting. I&apos;m here
                   to help!
                 </p>
               </div>
@@ -320,16 +458,54 @@ export default function SupportBotPage() {
                       {message.content}
                     </p>
                   )}
-                  <p
+                  <div
                     className={cn(
-                      "text-xs mt-2",
-                      message.role === "user"
-                        ? "text-white/70"
-                        : "text-foreground-muted"
+                      "mt-2 flex items-center gap-2",
+                      message.role === "assistant" ? "justify-between" : "justify-end"
                     )}
                   >
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
+                    {message.role === "assistant" && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          aria-label="Thumbs up this response"
+                          aria-pressed={message.feedback === "up"}
+                          onClick={() => handleFeedback(message.id, "up")}
+                          className={cn(
+                            "h-7 w-7 p-0",
+                            message.feedback === "up" && "text-primary bg-primary/10"
+                          )}
+                        >
+                          <ThumbsUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          aria-label="Thumbs down this response"
+                          aria-pressed={message.feedback === "down"}
+                          onClick={() => handleFeedback(message.id, "down")}
+                          className={cn(
+                            "h-7 w-7 p-0",
+                            message.feedback === "down" && "text-primary bg-primary/10"
+                          )}
+                        >
+                          <ThumbsDown className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    <p
+                      className={cn(
+                        "text-xs",
+                        message.role === "user" ? "text-white/70" : "text-foreground-muted"
+                      )}
+                    >
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
                 </div>
                 {message.role === "user" && (
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -338,7 +514,7 @@ export default function SupportBotPage() {
                 )}
               </div>
             ))}
-            {isLoading && (
+            {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex gap-3 justify-start">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-primary" />
@@ -367,12 +543,13 @@ export default function SupportBotPage() {
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 placeholder="Type your question here..."
                 className="flex-1 min-h-[60px] max-h-[120px] px-4 py-3 rounded-lg border border-border bg-background-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 disabled={isLoading}
               />
               <Button
+                type="button"
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
                 variant="primary"

@@ -1,38 +1,40 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: ["class"],
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
         background: {
-          DEFAULT: "#0d1014",
-          secondary: "#13171d",
-          tertiary: "#1c2129",
-          elevated: "#232933",
+          DEFAULT: "rgb(var(--background) / <alpha-value>)",
+          secondary: "rgb(var(--background-secondary) / <alpha-value>)",
+          tertiary: "rgb(var(--background-tertiary) / <alpha-value>)",
+          elevated: "rgb(var(--background-elevated) / <alpha-value>)",
         },
         foreground: {
-          DEFAULT: "#e5e7eb",
-          secondary: "#9ca3af",
-          muted: "#6b7280",
-          subtle: "#4b5563",
+          DEFAULT: "rgb(var(--foreground) / <alpha-value>)",
+          secondary: "rgb(var(--foreground-secondary) / <alpha-value>)",
+          muted: "rgb(var(--foreground-muted) / <alpha-value>)",
+          subtle: "rgb(var(--foreground-subtle) / <alpha-value>)",
         },
         border: {
-          DEFAULT: "#1f242d",
-          subtle: "#2a303b",
+          DEFAULT: "rgb(var(--border) / <alpha-value>)",
+          subtle: "rgb(var(--border-subtle) / <alpha-value>)",
         },
         primary: {
-          DEFAULT: "#10a37f",
-          hover: "#1ab68f",
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+          hover: "rgb(var(--primary-hover) / <alpha-value>)",
         },
-        info: "#38bdf8",
-        success: "#22c55e",
-        warning: "#f59e0b",
-        danger: "#ef4444",
+        info: "rgb(var(--info) / <alpha-value>)",
+        success: "rgb(var(--success) / <alpha-value>)",
+        warning: "rgb(var(--warning) / <alpha-value>)",
+        danger: "rgb(var(--danger) / <alpha-value>)",
       },
     },
   },

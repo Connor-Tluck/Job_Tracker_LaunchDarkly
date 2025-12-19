@@ -35,10 +35,6 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
         <div className="relative max-w-7xl mx-auto px-6 py-24 lg:py-32">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4">
-              <Star className="w-4 h-4" />
-              <span>Your Complete Job Search Operating System</span>
-            </div>
             <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight">
               Master Your Job Search
               <br />

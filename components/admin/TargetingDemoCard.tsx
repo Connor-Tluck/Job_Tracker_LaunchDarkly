@@ -13,9 +13,9 @@ import { useFlagsReady } from "@/hooks/useFlagsReady";
 export function TargetingDemoCard() {
   const flags = useFlags();
   const flagsReady = useFlagsReady();
-  const [showPremiumFeature, setShowPremiumFeature] = useState(false);
+  const [checkedFlagValue, setCheckedFlagValue] = useState(false);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
-  const flagKey = FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
+  const [checkedFlagKey, setCheckedFlagKey] = useState<string>(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO);
   const previousValueRef = useRef<boolean | undefined>(undefined);
 
   // Load user context
@@ -56,39 +56,57 @@ export function TargetingDemoCard() {
       return; // Don't update if flags aren't loaded yet
     }
 
-    // Extract flag value
-    const currentValue = flags[flagKey] ?? false;
+    // Choose which flag to demonstrate based on user grouping:
+    // - Job Seeker Role: show-premium-feature-demo
+    // - Business Role: show-business-user-mode
+    const isBusinessRole =
+      userContext?.role === "recruiter" ||
+      userContext?.subscriptionTier === "business" ||
+      userContext?.isBusinessUser === true;
+
+    const activeKey = isBusinessRole
+      ? FLAG_KEYS.SHOW_BUSINESS_USER_MODE
+      : FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
+
+    // Update the UI label
+    if (checkedFlagKey !== activeKey) {
+      setCheckedFlagKey(activeKey);
+    }
+
+    // Extract flag value for the active key
+    const currentValue = flags[activeKey] ?? false;
     
     // Only update state if value actually changed (prevents unnecessary re-renders)
     if (previousValueRef.current !== currentValue) {
-      setShowPremiumFeature(currentValue);
+      setCheckedFlagValue(currentValue);
       previousValueRef.current = currentValue;
     }
-  }, [flags, flagKey, flagsReady]);
+  }, [flags, flagsReady, userContext, checkedFlagKey]);
   
   const ldClient = useLDClient();
   
   // Debug logging
   useEffect(() => {
     if (flagsReady && userContext) {
-      console.log('🎨 TargetingDemoCard render:', {
-        showPremiumFeature,
-        userContext: {
-          key: userContext.key,
-          email: userContext.email,
-          subscriptionTier: userContext.subscriptionTier,
-          betaTester: userContext.betaTester,
-          role: userContext.role
-        }
-      });
-      
-      // Also check flag value directly from client
-      if (ldClient) {
-        const directFlagValue = ldClient.variation('show-premium-feature-demo', false);
-        console.log('🎯 Direct flag value from client:', directFlagValue);
+    console.log('🎨 TargetingDemoCard render:', {
+      checkedFlagValue,
+      checkedFlagKey,
+      userContext: {
+        key: userContext.key,
+        email: userContext.email,
+        subscriptionTier: userContext.subscriptionTier,
+        betaTester: userContext.betaTester,
+        role: userContext.role
       }
+    });
+    
+    // Also check flag value directly from client
+    if (ldClient) {
+      const directFlagValue = ldClient.variation('show-premium-feature-demo', false);
+      console.log('🎯 Direct flag value from client:', directFlagValue);
     }
-  }, [showPremiumFeature, userContext?.key, ldClient, flagsReady]);
+    }
+  }, [checkedFlagValue, checkedFlagKey, userContext?.key, ldClient, flagsReady]);
 
   // Don't render until flags are ready and user context is loaded
   if (!flagsReady || !userContext) {
@@ -103,6 +121,11 @@ export function TargetingDemoCard() {
     );
   }
 
+  const isBusinessUser =
+    userContext.role === "recruiter" ||
+    userContext.subscriptionTier === "business" ||
+    userContext.isBusinessUser === true;
+
   return (
     <Card className="p-6 space-y-5">
       <div className="flex items-center justify-between">
@@ -110,13 +133,17 @@ export function TargetingDemoCard() {
           <Sparkles className="w-5 h-5 text-primary" />
           <h3 className="font-semibold">Targeting Demo</h3>
         </div>
-        <div className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
-          showPremiumFeature
-            ? "bg-success/10 text-success border border-success/20"
-            : "bg-danger/10 text-danger border border-danger/20"
-        )}>
-          {showPremiumFeature ? (
+        <div className="flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded-lg text-xs border border-border bg-background-tertiary text-foreground-secondary font-mono">
+            {checkedFlagKey}
+          </div>
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
+            checkedFlagValue
+              ? "bg-success/10 text-success border border-success/20"
+              : "bg-danger/10 text-danger border border-danger/20"
+          )}>
+            {checkedFlagValue ? (
             <>
               <CheckCircle2 className="w-4 h-4" />
               <span>FLAG ON</span>
@@ -127,11 +154,12 @@ export function TargetingDemoCard() {
               <span>FLAG OFF</span>
             </>
           )}
+          </div>
         </div>
       </div>
 
-      {/* Premium Feature Content - Only shows when flag is ON */}
-      {showPremiumFeature ? (
+      {/* Demo content - depends on which flag we're checking */}
+      {!isBusinessUser && checkedFlagValue ? (
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/30 rounded-lg p-6">
             <div className="flex items-start gap-4 mb-4">
@@ -150,10 +178,31 @@ export function TargetingDemoCard() {
             </div>
           </div>
         </div>
+      ) : isBusinessUser && checkedFlagValue ? (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/30 rounded-lg p-6">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="p-3 rounded-lg bg-amber-500/20">
+                <Sparkles className="w-6 h-6 text-amber-500" />
+              </div>
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-600 text-xs font-semibold mb-3">
+                  Business User
+                </div>
+                <h4 className="text-xl font-semibold mb-2">Business User Card</h4>
+                <p className="text-sm text-foreground-secondary leading-relaxed">
+                  Business User Content Shown
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="bg-background-tertiary/50 border border-border-dashed rounded-lg p-8 text-center animate-in fade-in duration-300">
           <XCircle className="w-10 h-10 text-foreground-muted mx-auto mb-4" />
-          <p className="text-sm font-semibold text-foreground mb-2">Premium Feature Hidden</p>
+          <p className="text-sm font-semibold text-foreground mb-2">
+            {isBusinessUser ? "Business Access Hidden" : "Premium Feature Hidden"}
+          </p>
           <p className="text-xs text-foreground-secondary leading-relaxed">
             This content is hidden because your user context doesn&apos;t match the targeting rules.
             <br />
@@ -201,7 +250,10 @@ export function TargetingDemoCard() {
 
       <div className="pt-4 border-t border-border">
         <p className="text-xs text-foreground-muted leading-relaxed">
-          <strong className="text-foreground-secondary">Flag:</strong> <code className="bg-background-tertiary px-1.5 py-0.5 rounded text-xs font-mono">show-premium-feature-demo</code>
+          <strong className="text-foreground-secondary">Flag:</strong>{" "}
+          <code className="bg-background-tertiary px-1.5 py-0.5 rounded text-xs font-mono">
+            {checkedFlagKey}
+          </code>
           <br />
           <span className="mt-1 block">Configure individual or rule-based targeting in LaunchDarkly dashboard to see this content appear/disappear in real-time.</span>
         </p>

@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 
 export default function ExamplesPage() {
   // Page access check
-  const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_ADMIN_PAGE, true);
-  if (!canAccess) {
+  const canAccessAdmin = useFeatureFlag(FLAG_KEYS.SHOW_ADMIN_PAGE, true);
+  const canAccessExamples = useFeatureFlag(FLAG_KEYS.SHOW_ADMIN_EXAMPLES_PAGE, true);
+  if (!canAccessAdmin || !canAccessExamples) {
     return notFound();
   }
 

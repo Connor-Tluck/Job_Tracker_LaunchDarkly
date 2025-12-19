@@ -17,6 +17,8 @@ import { FLAG_KEYS, FlagKey } from '@/lib/launchdarkly/flags';
  * }
  */
 export function useFeatureFlag(flagKey: FlagKey, defaultValue: boolean = true): boolean {
+  // useFlags() returns LaunchDarkly-evaluated flag values for the *currently identified* user context.
+  // Before the SDK finishes bootstrapping/identify(), `flags[flagKey]` may be undefined → use a sane default.
   const flags = useFlags();
   return flags[flagKey] ?? defaultValue;
 }

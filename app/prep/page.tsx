@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { notFound } from "next/navigation";
 import { generalDocs as initialGeneralDocs, starStories, GeneralDoc } from "@/lib/mock-data";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +21,7 @@ import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
 import { trackPageView } from "@/lib/launchdarkly/tracking";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 const initialInterviewQuestions = [
   "Tell me about a complex technical challenge you solved for a customer and how you approached it.",
@@ -46,21 +47,12 @@ const initialQuestionsForThem = [
 export default function PrepPage() {
   // All hooks must be called before any conditional returns
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREP_PAGE, true);
+  const flagsReady = useFlagsReady();
+  const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
   const ldClient = useLDClient();
   const userContext = getOrCreateUserContext();
 
-  // Track page view
-  useEffect(() => {
-    if (canAccess) {
-      trackPageView(ldClient, userContext, "prep");
-    }
-  }, [ldClient, userContext, canAccess]);
-  
-  // Page access check (after all hooks)
-  if (!canAccess) {
-    return notFound();
-  }
-
+  // State/hooks must be declared before any early returns to avoid hook-order issues
   const [generalDocs, setGeneralDocs] = useState<GeneralDoc[]>(initialGeneralDocs);
   const [interviewQuestions, setInterviewQuestions] = useState<string[]>(initialInterviewQuestions);
   const [questionsForThem, setQuestionsForThem] = useState<string[]>(initialQuestionsForThem);
@@ -68,6 +60,128 @@ export default function PrepPage() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string | string[]>("");
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  const sections = useMemo(() => {
+    return [
+      {
+        id: "narrative",
+        label: "Personal Narrative",
+        icon: FileText,
+        field: "doc-master-prep",
+        content: generalDocs.find((d) => d.id === "master-prep")?.content || "",
+        isList: false,
+      },
+      {
+        id: "strengths",
+        label: "Strengths & Growth",
+        icon: Target,
+        field: "doc-strengths",
+        content: generalDocs.find((d) => d.id === "strengths")?.content || "",
+        isList: false,
+      },
+      {
+        id: "common-questions",
+        label: "Common Q&A",
+        icon: MessageSquare,
+        field: "doc-common-questions",
+        content: generalDocs.find((d) => d.id === "common-questions")?.content || "",
+        isList: false,
+      },
+      {
+        id: "interview-questions",
+        label: "Interview Question Bank",
+        icon: MessageSquare,
+        field: "interviewQuestions",
+        content: interviewQuestions,
+        isList: true,
+      },
+      {
+        id: "questions-for-them",
+        label: "Questions For Them",
+        icon: MessageSquare,
+        field: "questionsForThem",
+        content: questionsForThem,
+        isList: true,
+      },
+      {
+        id: "star-stories",
+        label: "STAR Story Shelf",
+        icon: Star,
+        field: null,
+        content: starStories,
+        isList: false,
+        isStarStories: true,
+      },
+    ];
+  }, [generalDocs, interviewQuestions, questionsForThem]);
+
+  // Track page view
+  useEffect(() => {
+    if (flagsReady && canAccess && !isBusinessMode) {
+      trackPageView(ldClient, userContext, "prep");
+    }
+  }, [ldClient, userContext, canAccess, flagsReady, isBusinessMode]);
+
+  // Intersection Observer for scroll-based active section detection
+  // IMPORTANT: this hook must run on every render (cannot be below conditional returns),
+  // but we can safely NO-OP until flags are ready and the page is actually accessible.
+  useEffect(() => {
+    if (!flagsReady || !canAccess || isBusinessMode) return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px",
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    sections.forEach((section) => {
+      const element = document.getElementById(section.id);
+      if (element) {
+        sectionRefs.current[section.id] = element;
+        observer.observe(element);
+      }
+    });
+
+    return () => {
+      Object.values(sectionRefs.current).forEach((element) => {
+        if (element) {
+          observer.unobserve(element);
+        }
+      });
+    };
+  }, [flagsReady, canAccess, isBusinessMode, sections]);
+
+  // Prevent UI flash while flags initialize (and enforce role-based app mode)
+  if (!flagsReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-foreground-secondary">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Business users should not access Job Seeker pages
+  if (isBusinessMode) {
+    return notFound();
+  }
+  
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
 
   const startEdit = (field: string, currentValue: string | string[]) => {
     setEditingField(field);
@@ -116,98 +230,6 @@ export default function PrepPage() {
       setQuestionsForThem(questionsForThem.filter((_, i) => i !== index));
     }
   };
-
-  const sections = [
-    {
-      id: "narrative",
-      label: "Personal Narrative",
-      icon: FileText,
-      field: "doc-master-prep",
-      content: generalDocs.find((d) => d.id === "master-prep")?.content || "",
-      isList: false,
-    },
-    {
-      id: "strengths",
-      label: "Strengths & Growth",
-      icon: Target,
-      field: "doc-strengths",
-      content: generalDocs.find((d) => d.id === "strengths")?.content || "",
-      isList: false,
-    },
-    {
-      id: "common-questions",
-      label: "Common Q&A",
-      icon: MessageSquare,
-      field: "doc-common-questions",
-      content: generalDocs.find((d) => d.id === "common-questions")?.content || "",
-      isList: false,
-    },
-    {
-      id: "interview-questions",
-      label: "Interview Question Bank",
-      icon: MessageSquare,
-      field: "interviewQuestions",
-      content: interviewQuestions,
-      isList: true,
-    },
-    {
-      id: "questions-for-them",
-      label: "Questions For Them",
-      icon: MessageSquare,
-      field: "questionsForThem",
-      content: questionsForThem,
-      isList: true,
-    },
-    {
-      id: "star-stories",
-      label: "STAR Story Shelf",
-      icon: Star,
-      field: null,
-      content: starStories,
-      isList: false,
-      isStarStories: true,
-    },
-  ];
-
-  // Intersection Observer for scroll-based active section detection
-  useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: "-20% 0px -60% 0px",
-      threshold: 0,
-    };
-
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-
-    sections.forEach((section) => {
-      const element = document.getElementById(section.id);
-      if (element) {
-        sectionRefs.current[section.id] = element;
-        observer.observe(element);
-      }
-    });
-
-    return () => {
-      Object.values(sectionRefs.current).forEach((element) => {
-        if (element) {
-          observer.unobserve(element);
-        }
-      });
-    };
-  }, [sections.map((s) => s.id).join(",")]);
-
-  // Page access check (after all hooks)
-  if (!canAccess) {
-    return notFound();
-  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">

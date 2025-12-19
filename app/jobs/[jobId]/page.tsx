@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -19,29 +19,30 @@ import { Edit2, Check, X, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 export default function JobDetailPage() {
   // All hooks must be called before any conditional returns
   const params = useParams();
   const jobId = params?.jobId as string;
+  const flagsReady = useFlagsReady();
   
   // Component visibility flags
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_JOB_DETAIL_PAGE, true);
+  const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
   const showTimeline = useFeatureFlag(FLAG_KEYS.SHOW_JOB_TIMELINE_SECTION, true);
   const showPrepChecklist = useFeatureFlag(FLAG_KEYS.SHOW_JOB_PREP_CHECKLIST, true);
   const showStarStories = useFeatureFlag(FLAG_KEYS.SHOW_JOB_STAR_STORIES, true);
   const showMetrics = useFeatureFlag(FLAG_KEYS.SHOW_JOB_METRICS_CARDS, true);
   const enableInlineEditing = useFeatureFlag(FLAG_KEYS.ENABLE_INLINE_EDITING, true);
 
-  // Page access check (after all hooks)
-  if (!canAccess) {
-    return notFound();
-  }
-
   const initialJob = initialJobs.find((entry) => entry.id === jobId);
 
-  const [job, setJob] = useState<Job | null>(initialJob || null);
-  const [prepDoc, setPrepDoc] = useState<PrepDoc | undefined>(initialJob ? initialPrepDocs[initialJob.prepDocId] : undefined);
+  // State/hooks must be declared before any conditional returns to avoid hook-order issues
+  const [job, setJob] = useState<Job | null>(() => initialJob ?? null);
+  const [prepDoc, setPrepDoc] = useState<PrepDoc | undefined>(() =>
+    initialJob ? initialPrepDocs[initialJob.prepDocId] : undefined
+  );
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [editingTimelineIndex, setEditingTimelineIndex] = useState<number | null>(null);
@@ -49,14 +50,47 @@ export default function JobDetailPage() {
   const [editingPrepField, setEditingPrepField] = useState<string | null>(null);
   const [editingPrepValue, setEditingPrepValue] = useState<string | string[]>("");
 
+  // If the route param changes (client-side navigation), reset state to match the new job.
+  useEffect(() => {
+    const nextInitialJob = initialJobs.find((entry) => entry.id === jobId) ?? null;
+    setJob(nextInitialJob);
+    setPrepDoc(nextInitialJob ? initialPrepDocs[nextInitialJob.prepDocId] : undefined);
+    setEditingField(null);
+    setEditValue("");
+    setEditingTimelineIndex(null);
+    setNewTimelineEvent(null);
+    setEditingPrepField(null);
+    setEditingPrepValue("");
+  }, [jobId]);
+
+  // Prevent UI flash while flags initialize (and enforce role-based app mode)
+  if (!flagsReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-foreground-secondary">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Business users should not access Job Seeker pages
+  if (isBusinessMode) {
+    return notFound();
+  }
+
+  // Page access check (after all hooks)
+  if (!canAccess) {
+    return notFound();
+  }
+
   // Conditional returns after all hooks
   if (!initialJob || !job) {
     return notFound();
   }
 
-  if (!canAccess) {
-    return notFound();
-  }
+  // canAccess is already enforced above (keep hook order stable; avoid redundant checks)
 
   const relatedStories = job ? starStories.filter((story) => story.tags.some((tag) => job.tags.includes(tag))) : [];
 
@@ -409,60 +443,106 @@ export default function JobDetailPage() {
     );
   };
 
+  const HeaderChip = ({
+    children,
+    tone = "default",
+  }: {
+    children: React.ReactNode;
+    tone?: "default" | "muted";
+  }) => {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1",
+          tone === "muted"
+            ? "border-border-subtle bg-background-tertiary/30 text-xs uppercase tracking-wide text-foreground-secondary"
+            : "border-border-subtle bg-background-tertiary/20 text-sm text-foreground-secondary"
+        )}
+      >
+        {children}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3 flex-1">
-          <p className="text-xs uppercase tracking-[0.4em] text-foreground-secondary">Company Prep</p>
-          <div className="flex items-center gap-3">
-            <EditableField field="company" value={job.company} className="text-4xl font-semibold">
-              <h1 className="text-4xl font-semibold">{job.company}</h1>
+      <Card className="p-6 lg:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-4 flex-1">
+            <div className="inline-flex">
+              <HeaderChip tone="muted">Company Prep</HeaderChip>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <EditableField field="company" value={job.company} className="text-4xl font-semibold">
+                <h1 className="text-4xl font-semibold">{job.company}</h1>
+              </EditableField>
+              <EditableField field="phase" value={job.phase} type="status">
+                <JobStatusBadge status={job.phase} />
+              </EditableField>
+            </div>
+
+            <EditableField field="title" value={job.title} className="text-lg text-foreground-secondary">
+              <p className="text-lg text-foreground-secondary">{job.title}</p>
             </EditableField>
-            <EditableField field="phase" value={job.phase} type="status">
-              <JobStatusBadge status={job.phase} />
-            </EditableField>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <HeaderChip>
+                <span className="font-medium text-foreground-secondary">Applied</span>
+              </HeaderChip>
+              <HeaderChip>
+                <EditableField
+                  field="applicationDate"
+                  value={job.applicationDate}
+                  type="text"
+                  placeholder="YYYY-MM-DD"
+                >
+                  {job.applicationDate}
+                </EditableField>
+              </HeaderChip>
+              <HeaderChip>
+                <span className="font-medium text-foreground-secondary">{job.metrics.touchpoints}</span>
+                <span>touchpoints</span>
+              </HeaderChip>
+              <HeaderChip>
+                <span className="font-medium text-foreground-secondary">Next step:</span>
+                <EditableField field="nextStep" value={job.nextStep || ""} placeholder="Add next step">
+                  {job.nextStep || "—"}
+                </EditableField>
+              </HeaderChip>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <HeaderChip tone="muted">Contact</HeaderChip>
+              <HeaderChip>
+                <EditableField field="contactName" value={job.contactName || ""} placeholder="Contact name">
+                  {job.contactName || "N/A"}
+                </EditableField>
+              </HeaderChip>
+              <HeaderChip>
+                <EditableField field="contactType" value={job.contactType || ""} placeholder="Contact type">
+                  {job.contactType || "—"}
+                </EditableField>
+              </HeaderChip>
+              <HeaderChip>
+                <EditableField field="response" value={job.response} type="response">
+                  <span className="font-medium text-foreground-secondary">Response:</span> {job.response}
+                </EditableField>
+              </HeaderChip>
+            </div>
           </div>
-          <EditableField field="title" value={job.title} className="text-lg text-foreground-secondary">
-            <p className="text-lg text-foreground-secondary">{job.title}</p>
-          </EditableField>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-foreground-secondary">
-            <span>Applied</span>
-            <EditableField field="applicationDate" value={job.applicationDate} type="text" placeholder="YYYY-MM-DD">
-              {job.applicationDate}
-            </EditableField>
-            <span>·</span>
-            <span>{job.metrics.touchpoints} touchpoints</span>
-            <span>·</span>
-            <span>Next step:</span>
-            <EditableField field="nextStep" value={job.nextStep || ""} placeholder="Add next step">
-              {job.nextStep || "—"}
-            </EditableField>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-foreground-secondary">
-            <span>Contact</span>
-            <EditableField field="contactName" value={job.contactName || ""} placeholder="Contact name">
-              {job.contactName || "N/A"}
-            </EditableField>
-            <span>·</span>
-            <EditableField field="contactType" value={job.contactType || ""} placeholder="Contact type">
-              {job.contactType || "—"}
-            </EditableField>
-            <span>·</span>
-            <EditableField field="response" value={job.response} type="response">
-              Response: {job.response}
-            </EditableField>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => alert("Attach Google Doc placeholder")}>
+              Link Drive Doc
+            </Button>
+            <Button variant="primary" onClick={() => alert("Start mock interview placeholder")}>
+              Start Prep Session
+            </Button>
           </div>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => alert("Attach Google Doc placeholder")}>
-            Link Drive Doc
-          </Button>
-          <Button variant="primary" onClick={() => alert("Start mock interview placeholder")}>
-            Start Prep Session
-          </Button>
-        </div>
-      </div>
+      </Card>
 
       {/* Overview Metrics */}
       {showMetrics && (

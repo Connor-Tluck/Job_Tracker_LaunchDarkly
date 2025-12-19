@@ -13,6 +13,7 @@ import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
 import { trackPageView } from "@/lib/launchdarkly/tracking";
+import { useFlagsReady } from "@/hooks/useFlagsReady";
 
 const categories = ["All", "Enterprise", "Analytics", "AI", "Delivery"] as const;
 
@@ -21,21 +22,12 @@ type ViewMode = "grid" | "list";
 export default function StarStoriesPage() {
   // All hooks must be called before any conditional returns
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_STAR_STORIES_PAGE, true);
+  const flagsReady = useFlagsReady();
+  const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
   const ldClient = useLDClient();
   const userContext = getOrCreateUserContext();
 
-  // Track page view
-  useEffect(() => {
-    if (canAccess) {
-      trackPageView(ldClient, userContext, "star-stories");
-    }
-  }, [ldClient, userContext, canAccess]);
-  
-  // Page access check (after all hooks)
-  if (!canAccess) {
-    return notFound();
-  }
-
+  // State/hooks must be declared before any early returns to avoid hook-order issues
   const [stories, setStories] = useState<StarStory[]>(initialStories);
   const [category, setCategory] = useState<(typeof categories)[number]>("All");
   const [search, setSearch] = useState("");
@@ -60,6 +52,30 @@ export default function StarStoriesPage() {
     });
   }, [category, search, stories]);
 
+  // Track page view
+  useEffect(() => {
+    if (flagsReady && canAccess && !isBusinessMode) {
+      trackPageView(ldClient, userContext, "star-stories");
+    }
+  }, [ldClient, userContext, canAccess, flagsReady, isBusinessMode]);
+
+  // Prevent UI flash while flags initialize (and enforce role-based app mode)
+  if (!flagsReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-foreground-secondary">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Business users should not access Job Seeker pages
+  if (isBusinessMode) {
+    return notFound();
+  }
+  
   // Page access check (after all hooks)
   if (!canAccess) {
     return notFound();

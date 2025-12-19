@@ -5,21 +5,27 @@ import { ReactNode, useEffect } from "react";
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext, UserContext } from "@/lib/launchdarkly/userContext";
 
-interface LaunchDarklyProviderProps {
-  children: ReactNode;
-}
-
-function LaunchDarklyProviderComponent({ children }: LaunchDarklyProviderProps) {
+/**
+ * Client-side LaunchDarkly wiring.
+ *
+ * Interview TL;DR:
+ * - `withLDProvider` boots the LD React SDK in the browser (using the *client-side ID*).
+ * - Once the SDK is ready we call `identify()` with our user context, which triggers
+ *   flag evaluation + targeting rules for that specific user.
+ */
+function LaunchDarklyProviderComponent({ children }: { children?: ReactNode }) {
   const ldClient = useLDClient();
   
   useEffect(() => {
     if (!ldClient) return;
     
-    // Get user context and identify with LaunchDarkly
+    // Identify the current user with LaunchDarkly so targeting rules apply.
+    // (In a real app, these attributes would come from your auth/session user profile.)
     const userContext = getOrCreateUserContext();
     
-    // Convert our UserContext to LaunchDarkly context format
+    // Map our demo user → LD context (attributes used for targeting).
     const ldContext = {
+      kind: "user",
       key: userContext.key,
       email: userContext.email,
       name: userContext.name,
@@ -33,7 +39,7 @@ function LaunchDarklyProviderComponent({ children }: LaunchDarklyProviderProps) 
       }
     };
     
-    // Identify user with LaunchDarkly for targeting
+    // Triggers LaunchDarkly to evaluate flags for this context and update flag values in the SDK.
     ldClient.identify(ldContext);
   }, [ldClient]);
 
@@ -43,8 +49,11 @@ function LaunchDarklyProviderComponent({ children }: LaunchDarklyProviderProps) 
 // Wrap with LaunchDarkly provider
 // Note: We'll identify the user after the client is initialized
 export const LaunchDarklyProvider = withLDProvider({
+  // Client-side ID (safe to ship to browser). Do NOT use server SDK keys here.
   clientSideID: process.env.NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID || '',
   options: {
+    // Bootstrapping means we can render using the last-known flag values immediately,
+    // and then the SDK will refresh them in the background after identify().
     bootstrap: 'localStorage', // Cache flags in localStorage for faster initial load
   },
   reactOptions: {

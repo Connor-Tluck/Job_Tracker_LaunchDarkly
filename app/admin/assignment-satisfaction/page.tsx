@@ -45,7 +45,7 @@ export default function AssignmentSatisfactionPage() {
                 Feature Flag: Implement a flag around a specific new feature
               </h3>
               <p className="text-foreground-secondary mb-3">
-                The application implements <strong>30 feature flags</strong> across multiple categories:
+                The application implements <strong>38 feature flags</strong> across multiple categories:
               </p>
               <ul className="list-disc list-inside space-y-2 text-foreground-secondary ml-4">
                 <li><strong>Page Access Flags (12 flags)</strong>: Control entire page visibility and access</li>
@@ -255,11 +255,24 @@ export default function AssignmentSatisfactionPage() {
                       <ul className="list-disc list-inside ml-4 space-y-1 mt-1">
                         <li><code className="bg-background px-1.5 py-0.5 rounded">/admin</code> - Interactive testing interface with User Context Switcher and Targeting Demo Card</li>
                         <li><code className="bg-background px-1.5 py-0.5 rounded">/landing/job-tracker</code> - Production-like demonstration</li>
-                        <li><code className="bg-background px-1.5 py-0.5 rounded">/landing/support-bot</code> - Support Bot chat interface (experimentation demo)</li>
+                        <li><code className="bg-background px-1.5 py-0.5 rounded">/landing/job-tracker</code> - Premium section visibility demo</li>
                       </ul>
                     </div>
                     <div>
-                      <p className="font-medium mb-1">2. Analytics Page Access Control</p>
+                      <p className="font-medium mb-1">2. Support Bot Access Control</p>
+                      <p>
+                        <strong>Flag:</strong> <code className="bg-background px-1.5 py-0.5 rounded">show-chatbot</code>
+                      </p>
+                      <p>
+                        <strong>Locations:</strong>
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1 mt-1">
+                        <li><code className="bg-background px-1.5 py-0.5 rounded">/landing</code> - Sidebar/nav link visibility</li>
+                        <li><code className="bg-background px-1.5 py-0.5 rounded">/landing/support-bot</code> - Page access gate (404 when OFF)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">3. Analytics Page Access Control</p>
                       <p>
                         <strong>Flag:</strong> <code className="bg-background px-1.5 py-0.5 rounded">show-analytics-page</code>
                       </p>
@@ -404,10 +417,7 @@ export default function AssignmentSatisfactionPage() {
                   </p>
                   <ul className="list-disc list-inside space-y-2 text-foreground-secondary ml-4">
                     <li>
-                      <strong>Landing Page Support Bot Link:</strong> Shows/hides the "Support Bot" link in the landing page navigation bar (<code className="bg-background px-1.5 py-0.5 rounded">app/landing/layout.tsx</code>). When the flag is ON, the link appears. When OFF, the link is hidden.
-                    </li>
-                    <li>
-                      <strong>Support Bot Page Access:</strong> Controls access to <code className="bg-background px-1.5 py-0.5 rounded">/landing/support-bot</code> (<code className="bg-background px-1.5 py-0.5 rounded">app/landing/support-bot/page.tsx</code>). When the flag is ON, the page is accessible. When OFF, accessing the page returns a 404 error.
+                      <strong>Targeting Demo Card:</strong> Controls the premium demo content shown in the admin dashboard.
                     </li>
                     <li>
                       <strong>Admin Page Targeting Demo Card:</strong> Controls the rendering of the premium feature card in the admin dashboard (<code className="bg-background px-1.5 py-0.5 rounded">components/admin/TargetingDemoCard.tsx</code>). When the flag is ON (for premium users/beta testers), the card shows the premium feature content. When OFF (for free users), it shows the "Premium Feature Hidden" message.
@@ -424,9 +434,23 @@ export default function AssignmentSatisfactionPage() {
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-foreground-secondary ml-4 mt-1">
                     <li>The Targeting Demo Card changing between ON/OFF states in the admin page</li>
-                    <li>The Support Bot link appearing/disappearing in the landing page navigation (visit <code className="bg-background px-1.5 py-0.5 rounded">/landing</code> to see)</li>
-                    <li>Access to <code className="bg-background px-1.5 py-0.5 rounded">/landing/support-bot</code> being granted or denied based on user context</li>
                     <li>The premium feature section on <code className="bg-background px-1.5 py-0.5 rounded">/landing/job-tracker</code> appearing or disappearing</li>
+                  </ul>
+                </div>
+                <div className="pt-4 border-t border-border">
+                  <p className="font-semibold text-foreground mb-2">
+                    <code className="bg-background px-2 py-1 rounded">show-chatbot</code> Flag
+                  </p>
+                  <p className="text-foreground-secondary mb-2">
+                    This flag controls Support Bot visibility and access:
+                  </p>
+                  <ul className="list-disc list-inside space-y-2 text-foreground-secondary ml-4">
+                    <li>
+                      <strong>Sidebar Link:</strong> Shows/hides the "Support Bot" link in the sidebar navigation.
+                    </li>
+                    <li>
+                      <strong>Page Access:</strong> Controls access to <code className="bg-background px-1.5 py-0.5 rounded">/landing/support-bot</code>. When OFF, the page returns a 404.
+                    </li>
                   </ul>
                 </div>
                 <div>
@@ -471,7 +495,7 @@ export default function AssignmentSatisfactionPage() {
                 Feature Flag: Use same flag from Targeting example
               </h3>
               <p className="text-foreground-secondary mb-3">
-                <strong>✅ Implemented:</strong> Using <code className="bg-background px-1.5 py-0.5 rounded">show-premium-feature-demo</code> flag to control Support Bot feature for experimentation.
+                <strong>✅ Implemented:</strong> Using <code className="bg-background px-1.5 py-0.5 rounded">show-chatbot</code> flag to control Support Bot feature for experimentation.
               </p>
               <div className="bg-background-tertiary p-4 rounded-lg space-y-2 text-sm">
                 <p className="text-foreground-secondary">
@@ -532,7 +556,7 @@ export default function AssignmentSatisfactionPage() {
                 <div>
                   <p className="font-semibold text-foreground mb-2">Experiment Configuration:</p>
                   <ul className="list-disc list-inside space-y-1 text-foreground-secondary ml-4">
-                    <li><strong>Feature Flag:</strong> <code className="bg-background px-1.5 py-0.5 rounded">show-premium-feature-demo</code> (controls Support Bot access)</li>
+                    <li><strong>Feature Flag:</strong> <code className="bg-background px-1.5 py-0.5 rounded">show-chatbot</code> (controls Support Bot access)</li>
                     <li><strong>Randomize by:</strong> User</li>
                     <li><strong>Sample Size:</strong> 50% of users included in the experiment</li>
                     <li><strong>Variation Split:</strong> 50% On (Support Bot access) / 50% Off (no Support Bot access)</li>
