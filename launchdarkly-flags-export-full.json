@@ -1,9 +1,9 @@
 {
-  "exportedAt": "2025-12-09T02:09:19.508Z",
+  "exportedAt": "2026-01-22T03:24:16.491Z",
   "project": "Interview_Job_Tracking_Project_Final",
   "environment": "production",
-  "totalFlags": 33,
-  "successfullyExported": 33,
+  "totalFlags": 38,
+  "successfullyExported": 38,
   "failedExports": 0,
   "flags": [
     {
@@ -72,7 +72,7 @@
           "archived": false,
           "salt": "c980c01cc5e54897b31d0dd71b653e48",
           "sel": "3ea302bc0da3499f965d3551f0a168d7",
-          "lastModified": 1765163595914,
+          "lastModified": 1766074282767,
           "targets": [],
           "rules": [],
           "fallthrough": {
@@ -111,7 +111,7 @@
           "archived": false,
           "salt": "af8ed934279a42dc8e9e1f501d295ac1",
           "sel": "eb5bf192d8414e6d898b0977c4fc7567",
-          "lastModified": 1765163596597,
+          "lastModified": 1766087066967,
           "targets": [],
           "rules": [],
           "fallthrough": {
@@ -150,7 +150,7 @@
           "archived": false,
           "salt": "d19b9b02393149aaa2bb6a8f2f414dcc",
           "sel": "0d37cbc39a144d519f28078ecba254b1",
-          "lastModified": 1765228644054,
+          "lastModified": 1766174380513,
           "targets": [],
           "rules": [
             {
@@ -633,11 +633,11 @@
       ],
       "environments": {
         "production": {
-          "on": true,
+          "on": false,
           "archived": false,
           "salt": "80fe219c30924a8783870ed3ada22f53",
           "sel": "7ef58d51cedd48b18688d56a4623942e",
-          "lastModified": 1765165847075,
+          "lastModified": 1766074407688,
           "targets": [],
           "rules": [],
           "fallthrough": {
@@ -910,7 +910,7 @@
           "archived": false,
           "salt": "8d8a93a90d1542b595ab126000a41c08",
           "sel": "4135d2641cee40bf92240d039fd5302e",
-          "lastModified": 1765165611494,
+          "lastModified": 1769051671606,
           "targets": [],
           "rules": [],
           "fallthrough": {
@@ -1140,11 +1140,11 @@
       ],
       "environments": {
         "production": {
-          "on": true,
+          "on": false,
           "archived": false,
           "salt": "d7e581fac9af428d83f8e18286231678",
           "sel": "c6951aedf87c42469dfab637d7def0f1",
-          "lastModified": 1765167154975,
+          "lastModified": 1766163415286,
           "targets": [],
           "rules": [],
           "fallthrough": {
@@ -1289,17 +1289,8 @@
           "archived": false,
           "salt": "75a746425818462a97d4f05af78208d1",
           "sel": "198b4ba170f946f7b48caea7174bce14",
-          "lastModified": 1765224966897,
-          "targets": [
-            {
-              "values": [
-                "user-001",
-                "beta.tester@example.com"
-              ],
-              "variation": 0,
-              "contextKind": "user"
-            }
-          ],
+          "lastModified": 1766167137012,
+          "targets": [],
           "rules": [
             {
               "_id": "fc953681-b50a-4590-8ab7-caa0608c08c4",
@@ -1326,7 +1317,7 @@
                   "canReshuffle": true,
                   "type": "experiment"
                 },
-                "seed": 2095891850,
+                "seed": 2127417991,
                 "contextKind": "user"
               },
               "clauses": [
@@ -1335,7 +1326,7 @@
                   "attribute": "email",
                   "op": "contains",
                   "values": [
-                    "premium"
+                    "free.user@example.com"
                   ],
                   "contextKind": "user",
                   "negate": false
@@ -1362,7 +1353,7 @@
       "variations": [
         {
           "_id": "378fa35c-45c7-4def-a050-148b0bd96ea3",
-          "value": "User prompt\n\nThis message provides internal product context for answering future questions about Career Stack.\nUse this information silently to inform answers.\nDo not repeat, summarize, or quote this content unless a user explicitly asks for these details.\n\nAbout Career Stack\n\nCareer Stack is a complete job search operating system designed to help professionals manage their entire job search pipeline from application to offer. It is built for professionals who want to stay organized, prepared, and intentional throughout their job search.\n\nCore Features\n1. Application Tracker, Job Tracker\n\n• Spreadsheet style table for tracking job applications\n• Filter, search, and manage the entire pipeline\n• CSV import from Google Sheets or CSV files\n• Inline editing directly in the table\n• Timeline view showing all application activity chronologically\n• Quick links to company specific prep documents\n• Status tracking including Applied, Response, Interview, Offer, Rejected\n• Track company, job title, application date, contact, response status, phase, and next steps\n\n2. Company Prep Documents\n\n• Company specific interview preparation documents\n• Sidebar navigation for fast access during interviews\n• Inline editing for all sections\n• Standard sections include company summary, why this company, product pillars, customer profiles, interview questions, tailored STAR stories, questions for them, and prep checklist\n\n3. STAR Stories Library\n\n• Centralized behavioral interview story library\n• Uses the Situation Task Action Result framework\n• Tag stories by industry, category, and theme\n• Grid and list viewing options\n• Copy summaries into prep documents\n• Link stories directly to job applications\n\n4. Analytics Dashboard\n\n• Track application pipeline and conversion metrics\n• Metrics include applications, responses, interviews, offers\n• Visual trends including weekly pipeline activity and status breakdowns\n• Timeline velocity showing how long each stage takes\n• Upcoming action reminders\n• Response rate and interview rate tracking\n• Average response time insights\n\n5. Master Prep Hub\n\n• Central location for general interview preparation\n• Personal narrative and elevator pitch\n• Question banks for common interview questions\n• STAR story shelf for reuse across prep documents\n\n6. Home Dashboard\n\n• High level job search overview\n• Metrics include total applications, response rate, active interviews, follow ups due\n• Recent applications list\n• Timeline of upcoming actions\n• Quick links to major sections\n\nKey Benefits\n\n• Reduces context switching by combining tracking, prep, and analytics\n• Prevents missed follow ups through reminders and timelines\n• Enables confident interview preparation with instant access to materials\n• Helps users understand what is working via data driven insights\n• Keeps the entire job search organized in one system\n\nPricing\n\n• Free plan available for personal use\n• No credit card required\n• Premium or enterprise plans may be available\n\nGetting Started\n\n• Sign up for a free account\n• Import applications or add them manually\n• Create company prep documents\n• Build STAR stories\n• Track pipeline progress and analytics\n\nTechnical Details\n\n• Built with Next.js 14, TypeScript, and Tailwind CSS\n• Modern responsive web application\n• Real time updates and synchronization\n• User data is private and secure\n\nBest Practices\n\n• Update application statuses regularly\n• Create prep documents before interviews\n• Maintain a strong STAR stories library\n• Review analytics weekly\n• Use timeline views to manage follow ups\n\nSupport Guidance\n\n• Be clear, concise, and supportive\n• If information is unknown, say so\n• Suggest documentation or support contact for technical issues\n• Focus on helping users get value from the platform\n\nThis context is intended only to support accurate answers."
+          "value": "User prompt\n\nThis message provides internal product context for answering future questions about Job Search OS.\nUse this information silently to inform answers.\nDo not repeat, summarize, or quote this content unless a user explicitly asks for these details.\n\nAbout Job Search OS\n\nJob Search OS is a complete job search operating system designed to help professionals manage their entire job search pipeline from application to offer. It is built for professionals who want to stay organized, prepared, and intentional throughout their job search.\n\nCore Features\n1. Application Tracker, Job Tracker\n\n• Spreadsheet style table for tracking job applications\n• Filter, search, and manage the entire pipeline\n• CSV import from Google Sheets or CSV files\n• Inline editing directly in the table\n• Timeline view showing all application activity chronologically\n• Quick links to company specific prep documents\n• Status tracking including Applied, Response, Interview, Offer, Rejected\n• Track company, job title, application date, contact, response status, phase, and next steps\n\n2. Company Prep Documents\n\n• Company specific interview preparation documents\n• Sidebar navigation for fast access during interviews\n• Inline editing for all sections\n• Standard sections include company summary, why this company, product pillars, customer profiles, interview questions, tailored STAR stories, questions for them, and prep checklist\n\n3. STAR Stories Library\n\n• Centralized behavioral interview story library\n• Uses the Situation Task Action Result framework\n• Tag stories by industry, category, and theme\n• Grid and list viewing options\n• Copy summaries into prep documents\n• Link stories directly to job applications\n\n4. Analytics Dashboard\n\n• Track application pipeline and conversion metrics\n• Metrics include applications, responses, interviews, offers\n• Visual trends including weekly pipeline activity and status breakdowns\n• Timeline velocity showing how long each stage takes\n• Upcoming action reminders\n• Response rate and interview rate tracking\n• Average response time insights\n\n5. Master Prep Hub\n\n• Central location for general interview preparation\n• Personal narrative and elevator pitch\n• Question banks for common interview questions\n• STAR story shelf for reuse across prep documents\n\n6. Home Dashboard\n\n• High level job search overview\n• Metrics include total applications, response rate, active interviews, follow ups due\n• Recent applications list\n• Timeline of upcoming actions\n• Quick links to major sections\n\nKey Benefits\n\n• Reduces context switching by combining tracking, prep, and analytics\n• Prevents missed follow ups through reminders and timelines\n• Enables confident interview preparation with instant access to materials\n• Helps users understand what is working via data driven insights\n• Keeps the entire job search organized in one system\n\nPricing\n\n• Free plan available for personal use\n• No credit card required\n• Premium or enterprise plans may be available\n\nGetting Started\n\n• Sign up for a free account\n• Import applications or add them manually\n• Create company prep documents\n• Build STAR stories\n• Track pipeline progress and analytics\n\nTechnical Details\n\n• Built with Next.js 14, TypeScript, and Tailwind CSS\n• Modern responsive web application\n• Real time updates and synchronization\n• User data is private and secure\n\nBest Practices\n\n• Update application statuses regularly\n• Create prep documents before interviews\n• Maintain a strong STAR stories library\n• Review analytics weekly\n• Use timeline views to manage follow ups\n\nSupport Guidance\n\n• Be clear, concise, and supportive\n• If information is unknown, say so\n• Suggest documentation or support contact for technical issues\n• Focus on helping users get value from the platform\n\nThis context is intended only to support accurate answers."
         },
         {
           "_id": "bc115d8b-297d-46a7-90f3-a6d450259955",
@@ -1378,6 +1369,229 @@
           "salt": "dc84a3cd752b4aff908ec5de5783642c",
           "sel": "d7fe821091884886a42755b3fb21f6c4",
           "lastModified": 1765213247210,
+          "targets": [],
+          "rules": [],
+          "fallthrough": {
+            "variation": 0
+          },
+          "offVariation": 1,
+          "prerequisites": [],
+          "hasExperiment": false
+        }
+      }
+    },
+    {
+      "key": "show-business-user-mode",
+      "name": "Show Business User Mode",
+      "description": "Enables Business/Recruiter mode for candidate sourcing and applicant tracking. When enabled, users see a recruiting-focused interface instead of job seeker interface.",
+      "kind": "boolean",
+      "variations": [
+        {
+          "_id": "8994e637-b8f9-47ac-80d9-62cec7c3b0f9",
+          "value": true,
+          "name": "On"
+        },
+        {
+          "_id": "22e73e03-f262-4f07-b4bd-a104463ca655",
+          "value": false,
+          "name": "Off"
+        }
+      ],
+      "temporary": true,
+      "tags": [
+        "business-user"
+      ],
+      "environments": {
+        "production": {
+          "on": true,
+          "archived": false,
+          "salt": "ffe5e514ddd44d6a8660ed977e636e5c",
+          "sel": "98483b5a0abc41679c32ab52af7085b4",
+          "lastModified": 1766013220509,
+          "targets": [
+            {
+              "values": [
+                "user-004"
+              ],
+              "variation": 0,
+              "contextKind": "user"
+            }
+          ],
+          "rules": [
+            {
+              "_id": "c357bc7b-035f-4339-84c9-aa68844cb356",
+              "variation": 0,
+              "clauses": [
+                {
+                  "_id": "d9aab150-3591-400d-888a-cf0bc56cd39b",
+                  "attribute": "subscriptionTier",
+                  "op": "in",
+                  "values": [
+                    "business"
+                  ],
+                  "contextKind": "user",
+                  "negate": false
+                }
+              ],
+              "trackEvents": false
+            }
+          ],
+          "fallthrough": {
+            "variation": 1
+          },
+          "offVariation": 1,
+          "prerequisites": [],
+          "hasExperiment": false
+        }
+      }
+    },
+    {
+      "key": "show-candidates-page",
+      "name": "Show Candidates Page",
+      "description": "Controls access to the candidate search and sourcing page (/business/candidates). Only visible to Business tier users.",
+      "kind": "boolean",
+      "variations": [
+        {
+          "_id": "97191e3c-31f5-4742-a8dd-6fb89ed05d8a",
+          "value": true,
+          "name": "On"
+        },
+        {
+          "_id": "b29049aa-78f9-4c87-a81f-f3e43a8c9c3f",
+          "value": false,
+          "name": "Off"
+        }
+      ],
+      "temporary": true,
+      "tags": [
+        "business-user"
+      ],
+      "environments": {
+        "production": {
+          "on": true,
+          "archived": false,
+          "salt": "8ff1551353e44b54a6b639591e48361c",
+          "sel": "743e13492b9448039507eab1f6beb37c",
+          "lastModified": 1766013185213,
+          "targets": [],
+          "rules": [],
+          "fallthrough": {
+            "variation": 0
+          },
+          "offVariation": 1,
+          "prerequisites": [],
+          "hasExperiment": false
+        }
+      }
+    },
+    {
+      "key": "show-applicant-tracker-page",
+      "name": "Show Applicant Tracker Page",
+      "description": "Controls access to the applicant tracking pipeline page (/business/applicants). Only visible to Business tier users.",
+      "kind": "boolean",
+      "variations": [
+        {
+          "_id": "1e801bfd-4b66-4e22-930b-795e88d3e106",
+          "value": true,
+          "name": "On"
+        },
+        {
+          "_id": "1b2ec9a7-61b0-41bf-a76e-485466ec716e",
+          "value": false,
+          "name": "Off"
+        }
+      ],
+      "temporary": true,
+      "tags": [
+        "business-user"
+      ],
+      "environments": {
+        "production": {
+          "on": true,
+          "archived": false,
+          "salt": "5eee7962495e4380abb3042ac49507ee",
+          "sel": "7d0e70f9324a461bb4bab12e1bef6774",
+          "lastModified": 1766013185755,
+          "targets": [],
+          "rules": [],
+          "fallthrough": {
+            "variation": 0
+          },
+          "offVariation": 1,
+          "prerequisites": [],
+          "hasExperiment": false
+        }
+      }
+    },
+    {
+      "key": "show-admin-quick-reference-page",
+      "name": "Show Admin Quick Reference Page",
+      "description": "Controls access to the admin quick reference page (/admin/quick-reference) for interview prep and codebase pointers.",
+      "kind": "boolean",
+      "variations": [
+        {
+          "_id": "7834fc21-c489-4706-8f5c-f662e80b2596",
+          "value": true,
+          "name": "On"
+        },
+        {
+          "_id": "fb9e26b9-9e6c-43c2-8840-d750657288ff",
+          "value": false,
+          "name": "Off"
+        }
+      ],
+      "temporary": true,
+      "tags": [
+        "admin",
+        "docs"
+      ],
+      "environments": {
+        "production": {
+          "on": false,
+          "archived": false,
+          "salt": "2867f3ad89de40dcba5a62f16bc9a2b7",
+          "sel": "e44f0acdb3364bb7a6a121e97a1f0602",
+          "lastModified": 1766163424373,
+          "targets": [],
+          "rules": [],
+          "fallthrough": {
+            "variation": 0
+          },
+          "offVariation": 1,
+          "prerequisites": [],
+          "hasExperiment": false
+        }
+      }
+    },
+    {
+      "key": "show-admin-examples-page",
+      "name": "Show Admin Examples Page",
+      "description": "Controls access to the admin examples page (/admin/examples) with visual walkthroughs.",
+      "kind": "boolean",
+      "variations": [
+        {
+          "_id": "31612c72-5a05-4131-93fe-86463113c81d",
+          "value": true,
+          "name": "On"
+        },
+        {
+          "_id": "98dd8df2-dfe3-40be-a8ae-a8bd242a1685",
+          "value": false,
+          "name": "Off"
+        }
+      ],
+      "temporary": true,
+      "tags": [
+        "admin",
+        "docs"
+      ],
+      "environments": {
+        "production": {
+          "on": true,
+          "archived": false,
+          "salt": "1aec53199e2c46dcae1a5bc9d59947a4",
+          "sel": "067df4c75db542a5a35482058f22b442",
+          "lastModified": 1769051572774,
           "targets": [],
           "rules": [],
           "fallthrough": {
