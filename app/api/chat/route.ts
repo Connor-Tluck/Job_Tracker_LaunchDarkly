@@ -205,6 +205,25 @@ export async function POST(request: NextRequest) {
     let systemPrompt = FALLBACK_SYSTEM_PROMPT;
     let openaiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
 
+    const buildContextSystemMessage = () => {
+      if (!userContext) return null;
+      const timezone = userContext?.timezone || userContext?.custom?.timezone;
+      const locale = userContext?.locale || userContext?.custom?.locale;
+      const location = userContext?.location || userContext?.custom?.location;
+      if (!timezone && !locale && !location) return null;
+      const locationText =
+        location && typeof location === "object"
+          ? `lat=${location.latitude}, lng=${location.longitude}, accuracy=${location.accuracy ?? "n/a"}`
+          : typeof location === "string"
+          ? location
+          : "unknown";
+      return {
+        role: 'system' as const,
+        content:
+          `User context (for personalization): timezone=${timezone ?? 'unknown'}, locale=${locale ?? 'unknown'}, location=${locationText}.`,
+      };
+    };
+
     // Try to get AI Config from LaunchDarkly
     if (ldClient && userContext) {
       try {
@@ -277,6 +296,10 @@ export async function POST(request: NextRequest) {
               })),
             ];
           }
+          const contextMessage = buildContextSystemMessage();
+          if (contextMessage) {
+            openaiMessages = [contextMessage, ...openaiMessages];
+          }
         } else {
           // AI Config not available or null, use fallback
           openaiMessages = [
@@ -289,6 +312,10 @@ export async function POST(request: NextRequest) {
               content: msg.content,
             })),
           ];
+          const contextMessage = buildContextSystemMessage();
+          if (contextMessage) {
+            openaiMessages = [contextMessage, ...openaiMessages];
+          }
         }
       } catch (aiConfigError: any) {
         console.error('Error getting AI Config from LaunchDarkly:', aiConfigError);
@@ -309,6 +336,10 @@ export async function POST(request: NextRequest) {
             content: msg.content,
           })),
         ];
+        const contextMessage = buildContextSystemMessage();
+        if (contextMessage) {
+          openaiMessages = [contextMessage, ...openaiMessages];
+        }
       }
     } else {
       // LaunchDarkly not available, use fallback
@@ -322,6 +353,10 @@ export async function POST(request: NextRequest) {
           content: msg.content,
         })),
       ];
+      const contextMessage = buildContextSystemMessage();
+      if (contextMessage) {
+        openaiMessages = [contextMessage, ...openaiMessages];
+      }
     }
 
     // Call OpenAI API.

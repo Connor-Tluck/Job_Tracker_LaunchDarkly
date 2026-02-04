@@ -18,6 +18,13 @@ export interface UserContext {
   companySize?: 'startup' | 'small' | 'medium' | 'large';
   industry?: string;
   isBusinessUser?: boolean;
+  timezone?: string;
+  locale?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  };
 }
 
 const DEMO_USERS: UserContext[] = [
@@ -79,7 +86,8 @@ export function getOrCreateUserContext(): UserContext {
   const stored = localStorage.getItem('ld-user-context');
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      return enrichWithLocale(parsed);
     } catch {
       // Invalid stored data, create new
     }
@@ -88,13 +96,15 @@ export function getOrCreateUserContext(): UserContext {
   // Create new demo user (randomly select one)
   // This makes the demo more interesting: different users land in different LD segments/variations.
   const user = DEMO_USERS[Math.floor(Math.random() * DEMO_USERS.length)];
-  localStorage.setItem('ld-user-context', JSON.stringify(user));
-  return user;
+  const enriched = enrichWithLocale(user);
+  localStorage.setItem('ld-user-context', JSON.stringify(enriched));
+  return enriched;
 }
 
 export function setUserContext(user: UserContext): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('ld-user-context', JSON.stringify(user));
+    const enriched = enrichWithLocale(user);
+    localStorage.setItem('ld-user-context', JSON.stringify(enriched));
   }
 }
 
@@ -109,5 +119,62 @@ export function clearUserContext(): void {
  */
 export function getDemoUsers(): UserContext[] {
   return DEMO_USERS;
+}
+
+function enrichWithLocale(user: UserContext): UserContext {
+  if (typeof window === 'undefined') {
+    return user;
+  }
+
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const locale = navigator.language || undefined;
+
+  return {
+    ...user,
+    timezone,
+    locale,
+  };
+}
+
+export async function refreshUserLocation(): Promise<UserContext | null> {
+  if (typeof window === 'undefined' || !navigator.geolocation) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const stored = localStorage.getItem('ld-user-context');
+        if (!stored) {
+          resolve(null);
+          return;
+        }
+        let current: UserContext;
+        try {
+          current = JSON.parse(stored);
+        } catch {
+          resolve(null);
+          return;
+        }
+        const updated: UserContext = {
+          ...current,
+          location: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          },
+        };
+        localStorage.setItem('ld-user-context', JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('ld-user-context-changed'));
+        resolve(updated);
+      },
+      () => resolve(null),
+      {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 60000,
+      }
+    );
+  });
 }
 

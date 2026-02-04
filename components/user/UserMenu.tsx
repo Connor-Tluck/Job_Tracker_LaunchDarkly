@@ -95,6 +95,8 @@ export function UserMenu({
             key: user.key,
             email: user.email,
             name: user.name,
+            role: user.role,
+            subscriptionTier: user.subscriptionTier,
             custom: {
               role: user.role,
               subscriptionTier: user.subscriptionTier,
@@ -102,6 +104,9 @@ export function UserMenu({
               betaTester: user.betaTester,
               companySize: user.companySize,
               industry: user.industry,
+              timezone: user.timezone,
+              locale: user.locale,
+              location: user.location,
             },
           });
         } catch {
@@ -178,6 +183,8 @@ export function UserMenu({
           key: updated.key,
           email: updated.email,
           name: updated.name,
+          role: updated.role,
+          subscriptionTier: updated.subscriptionTier,
           custom: {
             role: updated.role,
             subscriptionTier: updated.subscriptionTier,
@@ -185,6 +192,9 @@ export function UserMenu({
             betaTester: updated.betaTester,
             companySize: updated.companySize,
             industry: updated.industry,
+            timezone: updated.timezone,
+            locale: updated.locale,
+            location: updated.location,
           },
         });
       } catch {

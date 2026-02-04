@@ -12,9 +12,12 @@ import { UserContext } from "./userContext";
  */
 export function convertToLDContext(userContext: UserContext) {
   return {
+    kind: "user",
     key: userContext.key,
     email: userContext.email,
     name: userContext.name,
+    role: userContext.role,
+    subscriptionTier: userContext.subscriptionTier,
     custom: {
       role: userContext.role,
       subscriptionTier: userContext.subscriptionTier,
@@ -22,6 +25,9 @@ export function convertToLDContext(userContext: UserContext) {
       betaTester: userContext.betaTester,
       companySize: userContext.companySize,
       industry: userContext.industry,
+      timezone: userContext.timezone,
+      locale: userContext.locale,
+      location: userContext.location,
     }
   };
 }

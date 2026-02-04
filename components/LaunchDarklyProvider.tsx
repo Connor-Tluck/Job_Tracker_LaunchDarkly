@@ -3,7 +3,7 @@
 import { withLDProvider } from "launchdarkly-react-client-sdk";
 import { ReactNode, useEffect } from "react";
 import { useLDClient } from "launchdarkly-react-client-sdk";
-import { getOrCreateUserContext, UserContext } from "@/lib/launchdarkly/userContext";
+import { getOrCreateUserContext, refreshUserLocation } from "@/lib/launchdarkly/userContext";
 
 /**
  * Client-side LaunchDarkly wiring.
@@ -23,24 +23,38 @@ function LaunchDarklyProviderComponent({ children }: { children?: ReactNode }) {
     // (In a real app, these attributes would come from your auth/session user profile.)
     const userContext = getOrCreateUserContext();
     
-    // Map our demo user → LD context (attributes used for targeting).
-    const ldContext = {
-      kind: "user",
-      key: userContext.key,
-      email: userContext.email,
-      name: userContext.name,
-      custom: {
-        role: userContext.role,
-        subscriptionTier: userContext.subscriptionTier,
-        signupDate: userContext.signupDate,
-        betaTester: userContext.betaTester,
-        companySize: userContext.companySize,
-        industry: userContext.industry,
-      }
+    const identifyWithContext = (ctx: typeof userContext) => {
+      const ldContext = {
+        kind: "user",
+        key: ctx.key,
+        email: ctx.email,
+        name: ctx.name,
+        role: ctx.role,
+        subscriptionTier: ctx.subscriptionTier,
+        custom: {
+          role: ctx.role,
+          subscriptionTier: ctx.subscriptionTier,
+          signupDate: ctx.signupDate,
+          betaTester: ctx.betaTester,
+          companySize: ctx.companySize,
+          industry: ctx.industry,
+          timezone: ctx.timezone,
+          locale: ctx.locale,
+          location: ctx.location,
+        }
+      };
+      ldClient.identify(ldContext);
     };
-    
+
     // Triggers LaunchDarkly to evaluate flags for this context and update flag values in the SDK.
-    ldClient.identify(ldContext);
+    identifyWithContext(userContext);
+
+    // Best-effort: refresh location and re-identify to include lat/lng.
+    refreshUserLocation().then((updated) => {
+      if (updated) {
+        identifyWithContext(updated);
+      }
+    });
   }, [ldClient]);
 
   return <>{children}</>;

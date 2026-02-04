@@ -21,6 +21,9 @@ export function ChatTestCard() {
   const ldClient = useLDClient();
   const [mounted, setMounted] = useState(false);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
+  const [aiConfigSummary, setAiConfigSummary] = useState<string>("Loading...");
+  const [aiConfigDetail, setAiConfigDetail] = useState<string | null>(null);
+  const aiConfigKey = "jobs-os-basic-chatbot";
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -74,6 +77,52 @@ export function ChatTestCard() {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [mounted]);
+
+  useEffect(() => {
+    if (!userContext) return;
+    const resolveAiConfig = async () => {
+      try {
+        const response = await fetch("/api/ai-config-eval", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            configKey: aiConfigKey,
+            userContext,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setAiConfigSummary("unavailable");
+          setAiConfigDetail(data?.error || "error");
+          return;
+        }
+        const aiConfig = data?.value;
+        if (aiConfig && typeof aiConfig === "object") {
+          const variationKey =
+            aiConfig.variationKey ||
+            aiConfig.variation?.key ||
+            aiConfig.key ||
+            aiConfig.name ||
+            "unknown";
+          const modelName =
+            (aiConfig.model && (aiConfig.model.id || aiConfig.model.modelName || aiConfig.model.name)) ||
+            "unknown";
+          setAiConfigSummary(`${variationKey} • ${modelName}`);
+          setAiConfigDetail(
+            `variationIndex=${data?.variationIndex ?? "n/a"} reason=${data?.reason?.kind ?? "n/a"}`
+          );
+          return;
+        }
+        setAiConfigSummary("fallback");
+        setAiConfigDetail(null);
+      } catch {
+        setAiConfigSummary("unavailable");
+        setAiConfigDetail(null);
+      }
+    };
+    resolveAiConfig();
+  }, [userContext]);
+
 
   const scrollToBottom = (smooth = true) => {
     if (!messagesContainerRef.current) return;
@@ -211,6 +260,19 @@ export function ChatTestCard() {
             <span className="font-medium">Loading...</span>
           )}
         </p>
+        <p className="text-xs text-foreground-secondary mt-1">
+          AI config variation: <span className="font-medium">{aiConfigSummary}</span>
+        </p>
+        {aiConfigDetail && (
+          <p className="text-[11px] text-foreground-secondary mt-1">
+            {aiConfigDetail}
+          </p>
+        )}
+        {userContext && (
+          <div className="mt-2 rounded-lg border border-border bg-background p-2 text-[11px] text-foreground-secondary">
+            Context: kind=user • key={userContext.key} • role={userContext.role} • tier={userContext.subscriptionTier} • timezone={userContext.timezone ?? "n/a"} • locale={userContext.locale ?? "n/a"} • location={userContext.location ? `${userContext.location.latitude},${userContext.location.longitude}` : "n/a"}
+          </div>
+        )}
       </div>
 
       {/* Messages Area */}

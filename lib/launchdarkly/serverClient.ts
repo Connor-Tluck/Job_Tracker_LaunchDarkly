@@ -72,12 +72,21 @@ export function convertToLDContext(userContext: {
   betaTester?: boolean;
   companySize?: string;
   industry?: string;
+  timezone?: string;
+  locale?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  };
 }): LDContext {
   return {
     kind: 'user',
     key: userContext.key,
     email: userContext.email,
     name: userContext.name,
+    role: userContext.role,
+    subscriptionTier: userContext.subscriptionTier,
     custom: {
       role: userContext.role,
       subscriptionTier: userContext.subscriptionTier,
@@ -85,6 +94,9 @@ export function convertToLDContext(userContext: {
       betaTester: userContext.betaTester,
       companySize: userContext.companySize,
       industry: userContext.industry,
+      timezone: userContext.timezone,
+      locale: userContext.locale,
+      location: userContext.location,
     },
   };
 }

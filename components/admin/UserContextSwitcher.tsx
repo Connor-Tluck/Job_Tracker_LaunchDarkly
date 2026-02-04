@@ -106,6 +106,8 @@ export function UserContextSwitcher() {
         key: user.key,
         email: user.email,
         name: user.name,
+        role: user.role,
+        subscriptionTier: user.subscriptionTier,
         custom: {
           role: user.role,
           subscriptionTier: user.subscriptionTier,
@@ -113,6 +115,9 @@ export function UserContextSwitcher() {
           betaTester: user.betaTester,
           companySize: user.companySize,
           industry: user.industry,
+          timezone: user.timezone,
+          locale: user.locale,
+          location: user.location,
         }
       };
       
@@ -163,6 +168,8 @@ export function UserContextSwitcher() {
         key: updated.key,
         email: updated.email,
         name: updated.name,
+        role: updated.role,
+        subscriptionTier: updated.subscriptionTier,
         custom: {
           role: updated.role,
           subscriptionTier: updated.subscriptionTier,
@@ -170,6 +177,9 @@ export function UserContextSwitcher() {
           betaTester: updated.betaTester,
           companySize: updated.companySize,
           industry: updated.industry,
+          timezone: updated.timezone,
+          locale: updated.locale,
+          location: updated.location,
         },
       };
 
@@ -214,6 +224,26 @@ export function UserContextSwitcher() {
             {currentUser.email} • {currentUser.role} • {currentUser.subscriptionTier}
             {currentUser.betaTester && " • Beta Tester"}
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
+          Targeting Attributes
+        </div>
+        <div className="bg-background-tertiary p-4 rounded-lg text-xs text-foreground-secondary space-y-1">
+          <div><span className="text-foreground">kind</span>: user</div>
+          <div><span className="text-foreground">key</span>: {currentUser.key}</div>
+          <div><span className="text-foreground">email</span>: {currentUser.email}</div>
+          <div><span className="text-foreground">name</span>: {currentUser.name}</div>
+          <div><span className="text-foreground">role</span>: {currentUser.role}</div>
+          <div><span className="text-foreground">subscriptionTier</span>: {currentUser.subscriptionTier}</div>
+          <div><span className="text-foreground">signupDate</span>: {currentUser.signupDate}</div>
+          <div><span className="text-foreground">betaTester</span>: {currentUser.betaTester ? "true" : "false"}</div>
+          <div><span className="text-foreground">companySize</span>: {currentUser.companySize ?? "n/a"}</div>
+          <div><span className="text-foreground">industry</span>: {currentUser.industry ?? "n/a"}</div>
+          <div><span className="text-foreground">timezone</span>: {currentUser.timezone ?? "n/a"}</div>
+          <div><span className="text-foreground">locale</span>: {currentUser.locale ?? "n/a"}</div>
         </div>
       </div>
 
