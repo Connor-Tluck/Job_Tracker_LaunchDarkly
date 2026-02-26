@@ -139,9 +139,7 @@ function enrichWithLocale(user: UserContext): UserContext {
 export async function refreshUserLocation(): Promise<UserContext | null> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
     return null;
-  }
-
-  return new Promise((resolve) => {
+  }  return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const stored = localStorage.getItem('ld-user-context');
@@ -177,4 +175,3 @@ export async function refreshUserLocation(): Promise<UserContext | null> {
     );
   });
 }
-

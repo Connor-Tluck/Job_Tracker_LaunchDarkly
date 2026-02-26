@@ -49,7 +49,7 @@ export default function PrepPage() {
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREP_PAGE, true);
   const flagsReady = useFlagsReady();
   const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
-  const ldClient = useLDClient();
+  const ldClient = useLDClient() ?? null;
   const userContext = getOrCreateUserContext();
 
   // State/hooks must be declared before any early returns to avoid hook-order issues

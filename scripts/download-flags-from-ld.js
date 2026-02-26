@@ -20,7 +20,7 @@ const path = require('path');
 const https = require('https');
 const { URL } = require('url');
 
-const DEFAULT_OUTPUT = 'launchdarkly-flags-export-api-TESTING.json';
+const DEFAULT_OUTPUT = 'backups/launchdarkly-flags-export.json';
 
 function loadConfig() {
   const configPath = path.join(process.cwd(), 'ld-config.json');
@@ -42,7 +42,7 @@ const CONFIG = loadConfig();
 const DEFAULTS = {
   projectKey: CONFIG.projectKey || 'ctluck-ld-demo',
   environmentKey: CONFIG.environmentKey || 'production',
-  outputFile: (CONFIG.paths && CONFIG.paths.exportFlags) || DEFAULT_OUTPUT,
+  outputFile: (CONFIG.defaults && CONFIG.defaults.downloadTo) || (CONFIG.localFiles && CONFIG.localFiles.flagsOnly) || DEFAULT_OUTPUT,
   includeTags: true,
   includeTargets: true,
   includeRules: true,

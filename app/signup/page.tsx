@@ -57,9 +57,12 @@ export default function SignupPage() {
     if (ldClient) {
       try {
         await ldClient.identify({
+          kind: "user",
           key: upgraded.key,
           email: upgraded.email,
           name: upgraded.name,
+          role: upgraded.role,
+          subscriptionTier: upgraded.subscriptionTier,
           custom: {
             role: upgraded.role,
             subscriptionTier: upgraded.subscriptionTier,
@@ -67,6 +70,9 @@ export default function SignupPage() {
             betaTester: upgraded.betaTester,
             companySize: upgraded.companySize,
             industry: upgraded.industry,
+            timezone: upgraded.timezone,
+            locale: upgraded.locale,
+            location: upgraded.location,
           },
         });
       } catch {

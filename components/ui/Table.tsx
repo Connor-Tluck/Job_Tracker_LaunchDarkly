@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, MouseEventHandler } from "react";
 import { cn } from "@/lib/utils";
 
 interface TableProps {
@@ -26,9 +26,20 @@ export function TableBody({ children }: { children: ReactNode }) {
   return <tbody>{children}</tbody>;
 }
 
-export function TableRow({ children, className }: { children: ReactNode; className?: string }) {
+export function TableRow({
+  children,
+  className,
+  onClick,
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick?: MouseEventHandler<HTMLTableRowElement>;
+}) {
   return (
-    <tr className={cn("border-b border-border hover:bg-background-secondary transition-colors", className)}>
+    <tr
+      className={cn("border-b border-border hover:bg-background-secondary transition-colors", className)}
+      onClick={onClick}
+    >
       {children}
     </tr>
   );
@@ -42,9 +53,17 @@ export function TableHead({ children, className }: { children: ReactNode; classN
   );
 }
 
-export function TableCell({ children, className }: { children: ReactNode; className?: string }) {
+export function TableCell({
+  children,
+  className,
+  onClick,
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick?: MouseEventHandler<HTMLTableCellElement>;
+}) {
   return (
-    <td className={cn("px-4 py-3 text-sm text-foreground", className)}>
+    <td className={cn("px-4 py-3 text-sm text-foreground", className)} onClick={onClick}>
       {children}
     </td>
   );

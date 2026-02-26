@@ -67,7 +67,7 @@ export default function Home() {
   // Track page view
   useEffect(() => {
     if (flagsReady && canAccess && !isBusinessMode) {
-      trackPageView(ldClient, userContext, "dashboard");
+      trackPageView(ldClient ?? null, userContext, "dashboard");
     }
   }, [ldClient, userContext, canAccess, flagsReady, isBusinessMode]);
 

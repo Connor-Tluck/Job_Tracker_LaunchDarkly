@@ -68,25 +68,20 @@ export function trackPageView(
         path: typeof window !== 'undefined' ? window.location.pathname : '',
         ...additionalData,
       },
-      clientReady: ldClient.isOffline ? 'offline' : 'online'
+      clientReady: 'unknown'
     });
 
     try {
-      // LaunchDarkly React SDK track signature: track(eventName, context, metricValue?, customData?)
-      // For page views, we don't have a numeric metric value, so we pass undefined
-      // and put our data in the customData parameter (4th parameter)
-      ldClient.track(
-        eventName,
-        ldContext,
-        undefined, // metricValue - undefined for page views (no numeric value)
-        {
-          timestamp: new Date().toISOString(),
-          url: typeof window !== 'undefined' ? window.location.href : '',
-          path: typeof window !== 'undefined' ? window.location.pathname : '',
-          pageName,
-          ...additionalData,
-        }
-      );
+      // LaunchDarkly React SDK track signature: track(eventName, data?, metricValue?)
+      // Include the context in the custom data payload for debugging.
+      ldClient.track(eventName, {
+        timestamp: new Date().toISOString(),
+        url: typeof window !== 'undefined' ? window.location.href : '',
+        path: typeof window !== 'undefined' ? window.location.pathname : '',
+        pageName,
+        context: ldContext,
+        ...additionalData,
+      });
       
       console.log(`✅ Event queued: ${eventName}`);
       
@@ -148,24 +143,19 @@ export function trackEvent(
     console.log(`📊 Tracking event: ${eventName}`, {
       context: ldContext,
       data: eventData,
-      clientReady: ldClient.isOffline ? 'offline' : 'online'
+      clientReady: 'unknown'
     });
 
     try {
-      // LaunchDarkly React SDK track signature: track(eventName, context, metricValue?, customData?)
-      // For custom events, we don't have a numeric metric value, so we pass undefined
-      // and put our data in the customData parameter (4th parameter)
-      ldClient.track(
-        eventName,
-        ldContext,
-        undefined, // metricValue - undefined for custom events (no numeric value)
-        {
-          timestamp: new Date().toISOString(),
-          url: typeof window !== 'undefined' ? window.location.href : '',
-          path: typeof window !== 'undefined' ? window.location.pathname : '',
-          ...eventData,
-        }
-      );
+      // LaunchDarkly React SDK track signature: track(eventName, data?, metricValue?)
+      // Include the context in the custom data payload for debugging.
+      ldClient.track(eventName, {
+        timestamp: new Date().toISOString(),
+        url: typeof window !== 'undefined' ? window.location.href : '',
+        path: typeof window !== 'undefined' ? window.location.pathname : '',
+        context: ldContext,
+        ...eventData,
+      });
       
       console.log(`✅ Event queued: ${eventName}`);
       

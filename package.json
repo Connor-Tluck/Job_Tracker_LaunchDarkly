@@ -7,16 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "ld:convert": "node scripts/convert-flags-for-cli.js",
-    "ld:import": "node scripts/import-flags.js",
-    "ld:turn-on": "node scripts/turn-on-flags.js",
-    "ld:export-api": "node scripts/export-flags-via-api.js",
-    "ld:export-all": "node scripts/export-all-via-api.js",
+    "ld:download-all": "node scripts/download-all-from-ld.js",
+    "ld:download-flags": "node scripts/download-flags-from-ld.js",
     "ld:compare": "node scripts/compare-local-vs-ld.js",
-    "ld:import-missing": "node scripts/import-missing-to-ld.js",
-    "ld:add-tag": "node scripts/add-tag-to-flags.js",
-    "ld:export-ai-configs": "node scripts/export-ai-configs.js",
-    "ld:import-ai-configs": "node scripts/import-ai-configs.js"
+    "ld:upload": "node scripts/upload-to-ld.js",
+    "ld:add-tag": "node scripts/add-tag-to-flags.js"
   },
   "dependencies": {
     "@launchdarkly/node-server-sdk": "^9.10.5",

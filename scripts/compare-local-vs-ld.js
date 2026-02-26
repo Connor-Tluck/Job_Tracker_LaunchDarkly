@@ -16,7 +16,7 @@ const path = require('path');
 const https = require('https');
 const { URL } = require('url');
 
-const DEFAULT_INPUT = 'launchdarkly-export-all_Interview_Job_Tracking_Project_Final.json';
+const DEFAULT_INPUT = 'backups/launchdarkly-export-all.json';
 
 function loadConfig() {
   const configPath = path.join(process.cwd(), 'ld-config.json');
@@ -36,7 +36,7 @@ const CONFIG = loadConfig();
 const DEFAULTS = {
   projectKey: CONFIG.projectKey || 'ctluck-ld-demo',
   environmentKey: CONFIG.environmentKey || 'production',
-  inputFile: (CONFIG.paths && CONFIG.paths.compareInput) || DEFAULT_INPUT,
+  inputFile: (CONFIG.defaults && CONFIG.defaults.compareFrom) || DEFAULT_INPUT,
   includeFlags: true,
   includeSegments: true,
   includeMetrics: true,

@@ -2,7 +2,7 @@
 
 import { notFound } from "next/navigation";
 import { useFeatureFlag, useFeatureFlags } from "@/hooks/useFeatureFlag";
-import { FLAG_KEYS, FLAG_METADATA } from "@/lib/launchdarkly/flags";
+import { FLAG_KEYS, FLAG_METADATA, FlagKey } from "@/lib/launchdarkly/flags";
 import { Card } from "@/components/ui/Card";
 import { CheckCircle2, XCircle, Copy, Search, Server } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -13,7 +13,7 @@ import { ChatTestCard } from "@/components/admin/ChatTestCard";
 
 export default function AdminPage() {
   // Get all flags (must be called before any conditional returns)
-  const allFlagKeys = Object.values(FLAG_KEYS) as Array<keyof typeof FLAG_KEYS>;
+  const allFlagKeys = Object.values(FLAG_KEYS) as FlagKey[];
   const flags = useFeatureFlags(allFlagKeys);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");

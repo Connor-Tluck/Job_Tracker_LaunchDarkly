@@ -1,7 +1,7 @@
 "use client";
 
 import { withLDProvider } from "launchdarkly-react-client-sdk";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, ComponentType } from "react";
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { getOrCreateUserContext, refreshUserLocation } from "@/lib/launchdarkly/userContext";
 
@@ -62,7 +62,7 @@ function LaunchDarklyProviderComponent({ children }: { children?: ReactNode }) {
 
 // Wrap with LaunchDarkly provider
 // Note: We'll identify the user after the client is initialized
-export const LaunchDarklyProvider = withLDProvider({
+const LaunchDarklyProviderInner = withLDProvider({
   // Client-side ID (safe to ship to browser). Do NOT use server SDK keys here.
   clientSideID: process.env.NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID || '',
   options: {
@@ -73,4 +73,8 @@ export const LaunchDarklyProvider = withLDProvider({
   reactOptions: {
     useCamelCaseFlagKeys: false, // Use kebab-case flag keys as defined
   },
-})(LaunchDarklyProviderComponent);
+})(LaunchDarklyProviderComponent) as ComponentType<{ children?: ReactNode }>;
+
+export function LaunchDarklyProvider({ children }: { children?: ReactNode }) {
+  return <LaunchDarklyProviderInner>{children}</LaunchDarklyProviderInner>;
+}

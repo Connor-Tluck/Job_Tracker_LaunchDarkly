@@ -26,9 +26,8 @@ yarn-error.log*
 .env*.local
 .env
 
-# local LaunchDarkly exports
-launchdarkly-export-*.json
-takehome_ai_configs.json
+# LaunchDarkly backup files (may contain targeting rules and project data)
+/backups/
 
 # vercel
 .vercel

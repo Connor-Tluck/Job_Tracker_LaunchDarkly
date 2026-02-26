@@ -28,7 +28,7 @@ export default function AnalyticsPage() {
   // Track page view
   useEffect(() => {
     if (flagsReady && canAccess && !isBusinessMode) {
-      trackPageView(ldClient, userContext, "analytics");
+      trackPageView(ldClient ?? null, userContext, "analytics");
     }
   }, [ldClient, userContext, canAccess, flagsReady, isBusinessMode]);
 

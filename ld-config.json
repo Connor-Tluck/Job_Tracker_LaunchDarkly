@@ -1,12 +1,11 @@
 {
-  "projectKey": "ctluck-ld-demo",
+  "projectKey": "CT-Job-Tracker-Demo",
   "environmentKey": "production",
   "baseUrl": "https://app.launchdarkly.com",
   "rateLimitMs": 500,
-  "paths": {
-    "exportFlags": "takehome_flag_export_rev2.json",
-    "exportAll": "takehome_flag_export_rev2.json",
-    "compareInput": "launchdarkly-export-all_Interview_Job_Tracking_Project_Final.json",
-    "importInput": "takehome_ai_configs.json"
+  "defaults": {
+    "downloadTo": "backups/launchdarkly-export-all.json",
+    "compareFrom": "backups/launchdarkly-export-all.json",
+    "uploadFrom": "backups/launchdarkly-export-all.json"
   }
 }

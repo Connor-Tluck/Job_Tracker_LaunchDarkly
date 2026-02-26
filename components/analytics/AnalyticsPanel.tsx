@@ -185,10 +185,14 @@ function ChartCard({
   );
 }
 
-function cumulative<T extends { [key: string]: number }>(
+type NumericKeys<T> = {
+  [K in keyof T]: T[K] extends number ? K : never;
+}[keyof T];
+
+function cumulative<T>(
   arr: T[],
   idx: number,
-  key: keyof T
+  key: NumericKeys<T>
 ) {
   return arr.slice(0, idx + 1).reduce((sum, item) => sum + Number(item[key]), 0);
 }

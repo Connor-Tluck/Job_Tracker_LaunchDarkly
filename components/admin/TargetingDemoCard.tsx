@@ -60,7 +60,7 @@ export function TargetingDemoCard() {
     // - Job Seeker Role: show-premium-feature-demo
     // - Business Role: show-business-user-mode
     const isBusinessRole =
-      userContext?.role === "recruiter" ||
+      userContext?.role === "business" ||
       userContext?.subscriptionTier === "business" ||
       userContext?.isBusinessUser === true;
 
@@ -122,7 +122,7 @@ export function TargetingDemoCard() {
   }
 
   const isBusinessUser =
-    userContext.role === "recruiter" ||
+    userContext.role === "business" ||
     userContext.subscriptionTier === "business" ||
     userContext.isBusinessUser === true;
 

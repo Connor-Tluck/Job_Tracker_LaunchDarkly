@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Your complete job search management platform. Track applications, prepare for interviews, and land your dream job.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{

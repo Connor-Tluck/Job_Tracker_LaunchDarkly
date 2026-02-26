@@ -22,7 +22,7 @@ const path = require('path');
 const https = require('https');
 const { URL } = require('url');
 
-const DEFAULT_OUTPUT = 'launchdarkly-export-all_Interview_Job_Tracking_Project_Final.json';
+const DEFAULT_OUTPUT = 'backups/launchdarkly-export-all.json';
 
 function loadConfig() {
   const configPath = path.join(process.cwd(), 'ld-config.json');
@@ -44,7 +44,7 @@ const CONFIG = loadConfig();
 const DEFAULTS = {
   projectKey: CONFIG.projectKey || 'Interview_Job_Tracking_Project_Final',
   environmentKey: CONFIG.environmentKey || 'production',
-  outputFile: (CONFIG.paths && CONFIG.paths.exportAll) || DEFAULT_OUTPUT,
+  outputFile: (CONFIG.defaults && CONFIG.defaults.downloadTo) || (CONFIG.localFiles && CONFIG.localFiles.fullBackup) || DEFAULT_OUTPUT,
   includeTags: true,
   includeTargets: true,
   includeRules: true,
