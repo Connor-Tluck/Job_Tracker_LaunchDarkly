@@ -82,7 +82,7 @@ const DEMO_USERS: UserContext[] = [
           </p>
           <CodeBlock title="Source: app/landing/support-bot/page.tsx (flag + 404 gate)">
 {`const flagsReady = useFlagsReady();
-const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO, false);
+const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_CHATBOT, false);
 
 if (!flagsReady) return <Loading />;
 if (!canAccess) return notFound();`}
@@ -128,7 +128,7 @@ await client.waitForInitialization();`}
             Premium access is controlled with a flag (targeted in LaunchDarkly) and enforced via 404 gating in the route.
           </p>
           <CodeBlock title="Source: app/landing/support-bot/page.tsx (premium gate)">
-{`const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO, false);
+{`const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_CHATBOT, false);
 if (!canAccess) return notFound();`}
           </CodeBlock>
           <p className="text-sm text-foreground-secondary">

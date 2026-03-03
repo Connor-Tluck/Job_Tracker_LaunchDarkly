@@ -3,16 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLDClient } from "launchdarkly-react-client-sdk";
-import { LogOut, RefreshCw, Users } from "lucide-react";
+import { LogOut, RefreshCw, Users, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getDemoUsers,
-  getOrCreateUserContext,
   setUserContext,
   clearUserContext,
   type UserContext,
 } from "@/lib/launchdarkly/userContext";
 import { getUserAvatarDisplay } from "@/lib/launchdarkly/userAvatar";
+import { createMultiContext, createAnonymousContext } from "@/lib/launchdarkly/multiContext";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -32,17 +32,31 @@ export function UserMenu({
   const ldClient = useLDClient();
 
   const [currentUser, setCurrentUserState] = useState<UserContext | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
   const isInternalUpdateRef = useRef(false);
 
+  const ANONYMOUS_KEY = '__anonymous__';
   const demoUsers = useMemo(() => getDemoUsers(), []);
 
   const loadUser = useCallback(() => {
-    const user = getOrCreateUserContext();
-    setCurrentUserState(user);
-    return user;
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('ld-user-context');
+    if (!stored) {
+      setCurrentUserState(null);
+      setIsAnonymous(true);
+      return;
+    }
+    try {
+      const user = JSON.parse(stored) as UserContext;
+      setCurrentUserState(user);
+      setIsAnonymous(false);
+    } catch {
+      setCurrentUserState(null);
+      setIsAnonymous(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -75,13 +89,13 @@ export function UserMenu({
   const switchUser = useCallback(
     async (user: UserContext) => {
       if (isSwitching) return;
-      if (currentUser?.key === user.key) return;
+      if (!isAnonymous && currentUser?.key === user.key) return;
 
       setIsSwitching(true);
 
-      // Persist first (sync) so other listeners can read the new value immediately.
       setUserContext(user);
-      setCurrentUserState({ ...user }); // new reference forces UI update
+      setCurrentUserState({ ...user });
+      setIsAnonymous(false);
       isInternalUpdateRef.current = true;
 
       requestAnimationFrame(() => {
@@ -90,43 +104,55 @@ export function UserMenu({
 
       if (ldClient) {
         try {
-          await ldClient.identify({
-            kind: "user",
-            key: user.key,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            subscriptionTier: user.subscriptionTier,
-            custom: {
+          const ldContext = createMultiContext({
+            user: {
+              key: user.key,
+              name: user.name,
+              email: user.email,
               role: user.role,
               subscriptionTier: user.subscriptionTier,
+              industry: user.industry,
+              companySize: user.companySize,
               signupDate: user.signupDate,
               betaTester: user.betaTester,
-              companySize: user.companySize,
-              industry: user.industry,
-              timezone: user.timezone,
-              locale: user.locale,
-              location: user.location,
             },
+            device: {
+              key: `dvc-${user.key}`,
+              os: navigator.platform || 'unknown',
+              type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+              version: '1.0.0',
+            },
+            organization: user.industry ? {
+              key: `org-${user.key}`,
+              name: user.industry,
+              region: Intl.DateTimeFormat().resolvedOptions().timeZone?.startsWith('America') ? 'NA' : 'OTHER',
+            } : undefined,
           });
+          await ldClient.identify(ldContext);
         } catch {
-          // Even if identify fails, local context is already updated.
+          // local context is already updated
         }
       }
 
       setIsSwitching(false);
     },
-    [currentUser?.key, isSwitching, ldClient]
+    [currentUser?.key, isAnonymous, isSwitching, ldClient]
   );
 
   const onOpenChangeUser = () => {
-    const user = currentUser ?? loadUser();
-    setPendingKey(user.key);
+    setPendingKey(isAnonymous ? ANONYMOUS_KEY : (currentUser?.key ?? ANONYMOUS_KEY));
     setModalOpen(true);
   };
 
   const onConfirmChangeUser = async () => {
     if (!pendingKey) return;
+
+    if (pendingKey === ANONYMOUS_KEY) {
+      await onLogout();
+      setModalOpen(false);
+      return;
+    }
+
     const next = demoUsers.find((u) => u.key === pendingKey);
     if (!next) return;
 
@@ -136,28 +162,30 @@ export function UserMenu({
 
   const onLogout = async () => {
     if (isSwitching) return;
+    setIsSwitching(true);
 
-    // Demo logout: clear local context and re-identify as anonymous (best-effort),
-    // then send the user to the landing experience.
     clearUserContext();
-    window.dispatchEvent(new CustomEvent("ld-user-context-changed"));
+    setCurrentUserState(null);
+    setIsAnonymous(true);
+    isInternalUpdateRef.current = true;
+
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent("ld-user-context-changed"));
+    });
 
     if (ldClient) {
       try {
-        await ldClient.identify({ key: "anonymous" } as any);
+        await ldClient.identify(createAnonymousContext());
       } catch {
         // ignore
       }
     }
 
-    router.push("/landing");
-    router.refresh();
+    setIsSwitching(false);
   };
 
   const regenerateKey = useCallback(async () => {
-    if (isSwitching) return;
-    const user = currentUser ?? loadUser();
-    if (!user) return;
+    if (isSwitching || isAnonymous || !currentUser) return;
 
     setIsSwitching(true);
 
@@ -166,9 +194,8 @@ export function UserMenu({
         ? (crypto as Crypto).randomUUID()
         : `user-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-    const updated: UserContext = { ...user, key: newKey };
+    const updated: UserContext = { ...currentUser, key: newKey };
 
-    // Persist and broadcast first so the UI updates immediately.
     setUserContext(updated);
     setCurrentUserState({ ...updated });
     isInternalUpdateRef.current = true;
@@ -178,38 +205,47 @@ export function UserMenu({
 
     if (ldClient) {
       try {
-        await ldClient.identify({
-          kind: "user",
-          key: updated.key,
-          email: updated.email,
-          name: updated.name,
-          role: updated.role,
-          subscriptionTier: updated.subscriptionTier,
-          custom: {
+        const ldContext = createMultiContext({
+          user: {
+            key: updated.key,
+            name: updated.name,
+            email: updated.email,
             role: updated.role,
             subscriptionTier: updated.subscriptionTier,
+            industry: updated.industry,
+            companySize: updated.companySize,
             signupDate: updated.signupDate,
             betaTester: updated.betaTester,
-            companySize: updated.companySize,
-            industry: updated.industry,
-            timezone: updated.timezone,
-            locale: updated.locale,
-            location: updated.location,
           },
+          device: {
+            key: `dvc-${updated.key}`,
+            os: navigator.platform || 'unknown',
+            type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+            version: '1.0.0',
+          },
+          organization: updated.industry ? {
+            key: `org-${updated.key}`,
+            name: updated.industry,
+            region: Intl.DateTimeFormat().resolvedOptions().timeZone?.startsWith('America') ? 'NA' : 'OTHER',
+          } : undefined,
         });
+        await ldClient.identify(ldContext);
       } catch {
-        // ignore - local context is already updated
+        // local context is already updated
       }
     }
 
-    // Ensure pages that gate on flags re-render.
     router.refresh();
     setIsSwitching(false);
-  }, [currentUser, isSwitching, ldClient, loadUser, router]);
+  }, [currentUser, isAnonymous, isSwitching, ldClient, router]);
 
   const avatar = (() => {
-    const display = getUserAvatarDisplay(currentUser);
-    const label = currentUser ? `User menu for ${currentUser.name}` : "User menu";
+    const display = isAnonymous
+      ? { initial: "?", colorClass: "bg-gray-500" }
+      : getUserAvatarDisplay(currentUser);
+    const label = isAnonymous
+      ? "Anonymous User (No Login)"
+      : currentUser ? `User menu for ${currentUser.name}` : "User menu";
 
     if (variant === "pill") {
       return (
@@ -232,7 +268,7 @@ export function UserMenu({
             {display.initial}
           </span>
           <span className="font-medium text-foreground truncate">
-            {currentUser ? currentUser.name : "Loading…"}
+            {isAnonymous ? "Anonymous" : currentUser ? currentUser.name : "Loading…"}
           </span>
         </div>
       );
@@ -291,9 +327,43 @@ export function UserMenu({
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
+            {/* Anonymous option */}
+            <button
+              type="button"
+              onClick={() => setPendingKey(ANONYMOUS_KEY)}
+              className={cn(
+                "text-left rounded-xl border border-border bg-background-secondary/60 p-4 transition-colors",
+                "hover:bg-background-secondary hover:border-foreground-subtle",
+                pendingKey === ANONYMOUS_KEY && "ring-2 ring-primary/30 border-primary/40",
+                isSwitching && "opacity-60 cursor-not-allowed"
+              )}
+              disabled={isSwitching}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 bg-gray-500">
+                  <UserX className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold text-foreground truncate">Anonymous User</div>
+                    {isAnonymous && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs text-foreground-secondary truncate">
+                    No Login
+                  </div>
+                  <div className="mt-1 text-xs text-foreground-muted truncate">anonymous: true</div>
+                </div>
+              </div>
+            </button>
+
+            {/* Demo users */}
             {demoUsers.map((u) => {
               const selected = pendingKey === u.key;
-              const active = currentUser?.key === u.key;
+              const active = !isAnonymous && currentUser?.key === u.key;
               const display = getUserAvatarDisplay(u);
 
               return (
@@ -349,7 +419,8 @@ export function UserMenu({
               disabled={
                 isSwitching ||
                 !pendingKey ||
-                (currentUser?.key ? pendingKey === currentUser.key : false)
+                (isAnonymous && pendingKey === ANONYMOUS_KEY) ||
+                (!isAnonymous && currentUser?.key ? pendingKey === currentUser.key : false)
               }
             >
               {isSwitching ? "Switching…" : "Confirm"}

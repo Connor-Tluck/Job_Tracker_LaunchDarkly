@@ -5,7 +5,7 @@ export function getUserAvatarDisplay(user: UserContext | null | undefined): {
   colorClass: string;
 } {
   if (!user) {
-    return { initial: "C", colorClass: "bg-slate-600" };
+    return { initial: "?", colorClass: "bg-gray-500" };
   }
 
   const initial = user.name.charAt(0).toUpperCase();

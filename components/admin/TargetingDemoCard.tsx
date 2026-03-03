@@ -2,9 +2,9 @@
 
 import { useFeatureFlag, useFeatureFlags } from "@/hooks/useFeatureFlag";
 import { FLAG_KEYS } from "@/lib/launchdarkly/flags";
-import { getOrCreateUserContext, UserContext } from "@/lib/launchdarkly/userContext";
+import type { UserContext } from "@/lib/launchdarkly/userContext";
 import { Card } from "@/components/ui/Card";
-import { Star, CheckCircle2, XCircle, Sparkles } from "lucide-react";
+import { Star, CheckCircle2, XCircle, Sparkles, Monitor, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useLDClient, useFlags } from "launchdarkly-react-client-sdk";
@@ -15,14 +15,19 @@ export function TargetingDemoCard() {
   const flagsReady = useFlagsReady();
   const [checkedFlagValue, setCheckedFlagValue] = useState(false);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
-  const [checkedFlagKey, setCheckedFlagKey] = useState<string>(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO);
+  const [checkedFlagKey, setCheckedFlagKey] = useState<string>(FLAG_KEYS.SHOW_CHATBOT);
   const previousValueRef = useRef<boolean | undefined>(undefined);
 
-  // Load user context
-  const loadUserContext = useCallback(() => {
-    const user = getOrCreateUserContext();
-    setUserContext(user);
+  const readStoredUser = useCallback((): UserContext | null => {
+    if (typeof window === 'undefined') return null;
+    const stored = localStorage.getItem('ld-user-context');
+    if (!stored) return null;
+    try { return JSON.parse(stored) as UserContext; } catch { return null; }
   }, []);
+
+  const loadUserContext = useCallback(() => {
+    setUserContext(readStoredUser());
+  }, [readStoredUser]);
 
   useEffect(() => {
     // Load initially
@@ -56,9 +61,6 @@ export function TargetingDemoCard() {
       return; // Don't update if flags aren't loaded yet
     }
 
-    // Choose which flag to demonstrate based on user grouping:
-    // - Job Seeker Role: show-premium-feature-demo
-    // - Business Role: show-business-user-mode
     const isBusinessRole =
       userContext?.role === "business" ||
       userContext?.subscriptionTier === "business" ||
@@ -66,7 +68,7 @@ export function TargetingDemoCard() {
 
     const activeKey = isBusinessRole
       ? FLAG_KEYS.SHOW_BUSINESS_USER_MODE
-      : FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO;
+      : FLAG_KEYS.SHOW_CHATBOT;
 
     // Update the UI label
     if (checkedFlagKey !== activeKey) {
@@ -102,7 +104,7 @@ export function TargetingDemoCard() {
     
     // Also check flag value directly from client
     if (ldClient) {
-      const directFlagValue = ldClient.variation('show-premium-feature-demo', false);
+      const directFlagValue = ldClient.variation('show-chatbot', false);
       console.log('🎯 Direct flag value from client:', directFlagValue);
     }
     }
@@ -211,41 +213,81 @@ export function TargetingDemoCard() {
         </div>
       )}
 
-      {/* Current Context - Always visible regardless of flag state */}
-      <div className="bg-background-tertiary p-5 rounded-lg border border-border">
-        <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-wider">
-          Your Current Context
+      {/* Current Multi-Context - Always visible regardless of flag state */}
+      <div className="bg-background-tertiary p-5 rounded-lg border border-border space-y-4">
+        <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
+          Your Current Multi-Context
         </p>
-        <div className="grid grid-cols-2 gap-4 text-sm" key={`context-${userContext.key}`}>
-          <div>
-            <span className="text-foreground-secondary text-xs">Email:</span>
-            <div className="font-medium mt-1 break-all" key={`email-${userContext.key}`}>{userContext.email}</div>
-          </div>
-          <div>
-            <span className="text-foreground-secondary text-xs">Role:</span>
-            <div className="font-medium mt-1" key={`role-${userContext.key}`}>{userContext.role}</div>
-          </div>
-          <div>
-            <span className="text-foreground-secondary text-xs">Subscription:</span>
-            <div className="font-medium mt-1 capitalize" key={`subscription-${userContext.key}`}>{userContext.subscriptionTier}</div>
-          </div>
-          <div>
-            <span className="text-foreground-secondary text-xs">Beta Tester:</span>
-            <div className="font-medium mt-1" key={`beta-${userContext.key}`}>{userContext.betaTester ? 'Yes' : 'No'}</div>
-          </div>
-          {userContext.companySize && (
+
+        <div>
+          <p className="text-xs font-semibold text-foreground-secondary mb-2 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-primary" /> User
+          </p>
+          <div className="grid grid-cols-2 gap-4 text-sm" key={`context-${userContext.key}`}>
             <div>
-              <span className="text-foreground-secondary text-xs">Company Size:</span>
-              <div className="font-medium mt-1 capitalize" key={`company-${userContext.key}`}>{userContext.companySize}</div>
+              <span className="text-foreground-secondary text-xs">Email:</span>
+              <div className="font-medium mt-1 break-all">{userContext.email}</div>
             </div>
-          )}
-          {userContext.industry && (
             <div>
-              <span className="text-foreground-secondary text-xs">Industry:</span>
-              <div className="font-medium mt-1" key={`industry-${userContext.key}`}>{userContext.industry}</div>
+              <span className="text-foreground-secondary text-xs">Role:</span>
+              <div className="font-medium mt-1">{userContext.role}</div>
             </div>
-          )}
+            <div>
+              <span className="text-foreground-secondary text-xs">Subscription:</span>
+              <div className="font-medium mt-1 capitalize">{userContext.subscriptionTier}</div>
+            </div>
+            <div>
+              <span className="text-foreground-secondary text-xs">Beta Tester:</span>
+              <div className="font-medium mt-1">{userContext.betaTester ? 'Yes' : 'No'}</div>
+            </div>
+            {userContext.companySize && (
+              <div>
+                <span className="text-foreground-secondary text-xs">Company Size:</span>
+                <div className="font-medium mt-1 capitalize">{userContext.companySize}</div>
+              </div>
+            )}
+            {userContext.industry && (
+              <div>
+                <span className="text-foreground-secondary text-xs">Industry:</span>
+                <div className="font-medium mt-1">{userContext.industry}</div>
+              </div>
+            )}
+          </div>
         </div>
+
+        <div className="border-t border-border pt-3">
+          <p className="text-xs font-semibold text-foreground-secondary mb-2 flex items-center gap-1.5">
+            <Monitor className="w-3.5 h-3.5 text-primary" /> Device
+          </p>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-foreground-secondary text-xs">OS:</span>
+              <div className="font-medium mt-1">{typeof navigator !== 'undefined' ? navigator.platform : 'unknown'}</div>
+            </div>
+            <div>
+              <span className="text-foreground-secondary text-xs">Type:</span>
+              <div className="font-medium mt-1">{typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'}</div>
+            </div>
+          </div>
+        </div>
+
+        {userContext.industry && (
+          <div className="border-t border-border pt-3">
+            <p className="text-xs font-semibold text-foreground-secondary mb-2 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-primary" /> Organization
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-foreground-secondary text-xs">Name:</span>
+                <div className="font-medium mt-1">{userContext.industry}</div>
+              </div>
+              <div>
+                <span className="text-foreground-secondary text-xs">Region:</span>
+                <div className="font-medium mt-1">{userContext.timezone?.startsWith('America') ? 'NA' : 'OTHER'}</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 border-t border-border">

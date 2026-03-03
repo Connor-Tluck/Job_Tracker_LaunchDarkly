@@ -30,17 +30,6 @@ export default function Home() {
   const ldClient = useLDClient();
   const userContext = getOrCreateUserContext();
 
-  // Component visibility flags (must be declared before any early returns)
-  const showMetrics = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_METRICS, true);
-  const showPipelineStatus = useFeatureFlag(
-    FLAG_KEYS.SHOW_DASHBOARD_PIPELINE_STATUS,
-    true
-  );
-  const showRecentJobs = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_RECENT_JOBS, true);
-  const showUpcomingActions = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_UPCOMING_ACTIONS, true);
-  const showQuickLinks = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_QUICK_LINKS, true);
-  const showFollowUpsAlert = useFeatureFlag(FLAG_KEYS.SHOW_DASHBOARD_FOLLOW_UPS_ALERT, true);
-
   // Derived data (hooks must be declared before any early returns)
   const recentJobs = useMemo(() => jobs.slice(0, 5), []);
   const upcomingActions = analyticsSummary.upcomingActions.slice(0, 3);
@@ -110,47 +99,39 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      {(showMetrics || showPipelineStatus) && (
-        <section>
-          <PipelineOverviewCard
-            subtitle={`${jobs.length} active applications`}
-            metrics={
-              showMetrics
-                ? [
-                    {
-                      label: "Applications",
-                      value: jobs.length,
-                      subtext: "+3 this week",
-                      trend: "up",
-                    },
-                    {
-                      label: "Response Rate",
-                      value: `${responseRate}%`,
-                      subtext: `${jobs.filter((j) => j.response === "Yes").length} responses`,
-                    },
-                    {
-                      label: "Active Interviews",
-                      value: activeInterviews,
-                      subtext: "Phone screens + interviews",
-                    },
-                    {
-                      label: "Follow-ups Due",
-                      value: followUpsDue,
-                      subtext: "Action items pending",
-                      trend: followUpsDue > 0 ? "alert" : undefined,
-                    },
-                  ]
-                : undefined
-            }
-            statusItems={showPipelineStatus ? pipelineItems : undefined}
-          />
-        </section>
-      )}
+      <section>
+        <PipelineOverviewCard
+          subtitle={`${jobs.length} active applications`}
+          metrics={[
+            {
+              label: "Applications",
+              value: jobs.length,
+              subtext: "+3 this week",
+              trend: "up",
+            },
+            {
+              label: "Response Rate",
+              value: `${responseRate}%`,
+              subtext: `${jobs.filter((j) => j.response === "Yes").length} responses`,
+            },
+            {
+              label: "Active Interviews",
+              value: activeInterviews,
+              subtext: "Phone screens + interviews",
+            },
+            {
+              label: "Follow-ups Due",
+              value: followUpsDue,
+              subtext: "Action items pending",
+              trend: followUpsDue > 0 ? "alert" : undefined,
+            },
+          ]}
+          statusItems={pipelineItems}
+        />
+      </section>
 
-      {(showRecentJobs || showUpcomingActions) && (
-        <div className={`grid gap-6 ${showRecentJobs ? "lg:grid-cols-[2fr,1fr]" : "lg:grid-cols-1"}`}>
-          {showRecentJobs && (
-            <section className="space-y-4">
+      <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+        <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Recent Applications</h2>
                 <Link
@@ -190,11 +171,9 @@ export default function Home() {
                 ))}
               </div>
             </section>
-          )}
 
           <div className="space-y-6">
-            {showUpcomingActions && (
-              <section className="space-y-4">
+            <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Upcoming Actions</h2>
                   <Link
@@ -231,7 +210,6 @@ export default function Home() {
                   )}
                 </div>
               </section>
-            )}
 
             <section>
               <DashboardCalendarCard
@@ -244,10 +222,8 @@ export default function Home() {
             </section>
           </div>
         </div>
-      )}
 
-
-      {showFollowUpsAlert && followUpsDue > 0 && (
+      {followUpsDue > 0 && (
         <Card className="p-4 bg-warning/10 border-warning/20">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-warning mt-0.5" />

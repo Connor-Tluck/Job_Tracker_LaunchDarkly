@@ -80,7 +80,6 @@ export function Sidebar() {
   const [showCompanyPrep, setShowCompanyPrep] = useState(false);
   const [showStarStories, setShowStarStories] = useState(false);
   const [showJobs, setShowJobs] = useState(false);
-  const [enableTimelineView, setEnableTimelineView] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAssignmentSatisfaction, setShowAssignmentSatisfaction] = useState(false);
   const [showAdminQuickReference, setShowAdminQuickReference] = useState(false);
@@ -119,7 +118,6 @@ export function Sidebar() {
     updateFlag(FLAG_KEYS.SHOW_COMPANY_PREP_PAGE, flags[FLAG_KEYS.SHOW_COMPANY_PREP_PAGE], true, setShowCompanyPrep);
     updateFlag(FLAG_KEYS.SHOW_STAR_STORIES_PAGE, flags[FLAG_KEYS.SHOW_STAR_STORIES_PAGE], true, setShowStarStories);
     updateFlag(FLAG_KEYS.SHOW_JOBS_PAGE, flags[FLAG_KEYS.SHOW_JOBS_PAGE], true, setShowJobs);
-    updateFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, flags[FLAG_KEYS.ENABLE_TIMELINE_VIEW], true, setEnableTimelineView);
     updateFlag(FLAG_KEYS.SHOW_ADMIN_PAGE, flags[FLAG_KEYS.SHOW_ADMIN_PAGE], true, setShowAdmin);
     updateFlag(FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE, flags[FLAG_KEYS.SHOW_ASSIGNMENT_SATISFACTION_PAGE], true, setShowAssignmentSatisfaction);
     updateFlag(FLAG_KEYS.SHOW_ADMIN_QUICK_REFERENCE_PAGE, flags[FLAG_KEYS.SHOW_ADMIN_QUICK_REFERENCE_PAGE], true, setShowAdminQuickReference);
@@ -182,7 +180,7 @@ export function Sidebar() {
         items: section.items.filter((item) => {
           if (item.href === "/analytics") return showAnalytics;
           if (item.href === "/jobs") return showJobs;
-          if (item.href === "/jobs?view=timeline") return showJobs && enableTimelineView;
+          if (item.href === "/jobs?view=timeline") return showJobs;
           return true;
         }),
       };

@@ -23,14 +23,11 @@ import { getOrCreateUserContext } from "@/lib/launchdarkly/userContext";
 import { Star } from "lucide-react";
 
 export default function JobTrackerPage() {
-  // Page access check
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_LANDING_JOB_TRACKER, true);
   if (!canAccess) {
     return notFound();
   }
 
-  // Targeting demo - this flag uses targeting rules
-  const showPremiumFeature = useFeatureFlag(FLAG_KEYS.SHOW_PREMIUM_FEATURE_DEMO, false);
   const userContext = getOrCreateUserContext();
 
   return (
@@ -306,8 +303,7 @@ export default function JobTrackerPage() {
       </section>
 
       {/* Premium Feature Demo - Targeting Example */}
-      {showPremiumFeature && (
-        <section className="py-16 bg-primary/5 border-y border-primary/20">
+      <section className="py-16 bg-primary/5 border-y border-primary/20">
           <div className="max-w-7xl mx-auto px-6">
             <Card className="p-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
               <div className="flex items-start gap-4">
@@ -359,7 +355,6 @@ export default function JobTrackerPage() {
             </Card>
           </div>
         </section>
-      )}
     </div>
   );
 }

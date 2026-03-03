@@ -54,9 +54,6 @@ export default function JobsPage() {
   // Page access: if show-jobs-page is OFF, we do not render /jobs.
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_JOBS_PAGE, true);
   const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
-  const enableCSVImport = useFeatureFlag(FLAG_KEYS.ENABLE_CSV_IMPORT, true);
-  // Feature access: if enable-timeline-view is OFF, we block /jobs?view=timeline.
-  const enableTimelineView = useFeatureFlag(FLAG_KEYS.ENABLE_TIMELINE_VIEW, true);
 
   const viewMode = params.get("view");
 
@@ -107,11 +104,6 @@ export default function JobsPage() {
     return notFound();
   }
 
-  // Feature access check: Timeline view must be enabled to render via deep link (?view=timeline)
-  if (viewMode === "timeline" && !enableTimelineView) {
-    return notFound();
-  }
-
   return (
     <div className="space-y-8">
       <SectionCard
@@ -147,29 +139,23 @@ export default function JobsPage() {
               Manual Sync
             </Button>
 
-            {enableTimelineView && (
-              <Link href={viewMode === "timeline" ? "/jobs" : "/jobs?view=timeline"}>
-                <Button variant="outline" size="sm">
-                  <CalendarClock className="w-4 h-4" />
-                  {viewMode === "timeline" ? "Table" : "Timeline"}
-                </Button>
-              </Link>
-            )}
+            <Link href={viewMode === "timeline" ? "/jobs" : "/jobs?view=timeline"}>
+              <Button variant="outline" size="sm">
+                <CalendarClock className="w-4 h-4" />
+                {viewMode === "timeline" ? "Table" : "Timeline"}
+              </Button>
+            </Link>
 
-            {enableCSVImport && (
-              <>
-                <Button variant="primary" size="sm" onClick={() => setIsImportOpen(true)}>
-                  Import CSV <ArrowRight className="w-4 h-4" />
-                </Button>
-                <CSVImportModal
-                  isOpen={isImportOpen}
-                  onClose={() => setIsImportOpen(false)}
-                  onImport={(importedJobs) => {
-                    setJobs((prevJobs) => [...prevJobs, ...importedJobs]);
-                  }}
-                />
-              </>
-            )}
+            <Button variant="primary" size="sm" onClick={() => setIsImportOpen(true)}>
+              Import CSV <ArrowRight className="w-4 h-4" />
+            </Button>
+            <CSVImportModal
+              isOpen={isImportOpen}
+              onClose={() => setIsImportOpen(false)}
+              onImport={(importedJobs) => {
+                setJobs((prevJobs) => [...prevJobs, ...importedJobs]);
+              }}
+            />
           </div>
         }
         contentClassName="space-y-4"

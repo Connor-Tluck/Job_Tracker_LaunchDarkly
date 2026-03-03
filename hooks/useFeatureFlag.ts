@@ -30,9 +30,9 @@ export function useFeatureFlag(flagKey: FlagKey, defaultValue: boolean = true): 
  * @returns Object with flag keys as properties and their values
  * 
  * @example
- * const { showMetrics, showRecentJobs } = useFeatureFlags([
- *   FLAG_KEYS.SHOW_DASHBOARD_METRICS,
- *   FLAG_KEYS.SHOW_DASHBOARD_RECENT_JOBS
+ * const { showDashboard, showJobs } = useFeatureFlags([
+ *   FLAG_KEYS.SHOW_DASHBOARD_PAGE,
+ *   FLAG_KEYS.SHOW_JOBS_PAGE
  * ]);
  */
 export function useFeatureFlags(flagKeys: FlagKey[]): Record<FlagKey, boolean> {

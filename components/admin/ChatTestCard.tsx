@@ -3,9 +3,8 @@
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Bot, User, Send, MessageCircle } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { useLDClient } from "launchdarkly-react-client-sdk";
-import { getOrCreateUserContext, UserContext } from "@/lib/launchdarkly/userContext";
+import { useState, useRef, useEffect, useCallback } from "react";
+import type { UserContext } from "@/lib/launchdarkly/userContext";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,8 +16,45 @@ interface Message {
   timestamp: Date;
 }
 
+// Module-level fetch: fires once per userKey per page load.
+// The promise is cached so React StrictMode cleanup can't abort it.
+const aiConfigPromises = new Map<string, Promise<{ summary: string; detail: string | null }>>();
+
+function fetchAiConfig(configKey: string, userContext: UserContext): Promise<{ summary: string; detail: string | null }> {
+  const key = userContext.key;
+  const existing = aiConfigPromises.get(key);
+  if (existing) return existing;
+
+  const p = fetch("/api/ai-config-eval", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ configKey, userContext }),
+  })
+    .then(async (response) => {
+      const data = await response.json();
+      if (!response.ok) {
+        return { summary: "unavailable" as const, detail: (data?.error || "error") as string };
+      }
+      const aiConfig = data?.value;
+      if (aiConfig && typeof aiConfig === "object") {
+        const variationKey =
+          aiConfig.variationKey || aiConfig.variation?.key || aiConfig.key || aiConfig.name || "unknown";
+        const modelName =
+          (aiConfig.model && (aiConfig.model.id || aiConfig.model.modelName || aiConfig.model.name)) || "unknown";
+        return {
+          summary: `${variationKey} • ${modelName}`,
+          detail: `variationIndex=${data?.variationIndex ?? "n/a"} reason=${data?.reason?.kind ?? "n/a"}`,
+        };
+      }
+      return { summary: "fallback", detail: null };
+    })
+    .catch(() => ({ summary: "unavailable" as const, detail: null }));
+
+  aiConfigPromises.set(key, p);
+  return p;
+}
+
 export function ChatTestCard() {
-  const ldClient = useLDClient();
   const [mounted, setMounted] = useState(false);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const [aiConfigSummary, setAiConfigSummary] = useState<string>("Loading...");
@@ -37,91 +73,41 @@ export function ChatTestCard() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Handle hydration - only read from localStorage after mount
-  useEffect(() => {
-    setMounted(true);
-    const currentContext = getOrCreateUserContext();
-    setUserContext(currentContext);
+  const readStoredUser = useCallback((): UserContext | null => {
+    const stored = localStorage.getItem('ld-user-context');
+    if (!stored) return null;
+    try { return JSON.parse(stored) as UserContext; } catch { return null; }
   }, []);
 
-  // Listen for user context changes (when user switches via UserContextSwitcher)
   useEffect(() => {
-    if (!mounted) return;
+    setMounted(true);
+    setUserContext(readStoredUser());
 
-    const checkUserContext = () => {
-      const currentContext = getOrCreateUserContext();
-      setUserContext(currentContext);
-    };
+    const handleChange = () => setUserContext(readStoredUser());
 
-    // Check immediately
-    checkUserContext();
-
-    // Listen for custom event dispatched by UserContextSwitcher
-    const handleUserContextChange = () => {
-      checkUserContext();
-    };
-
-    window.addEventListener('ld-user-context-changed', handleUserContextChange);
-    
-    // Also listen for storage events (cross-tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'ld-user-context') {
-        checkUserContext();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('ld-user-context-changed', handleChange);
+    const handleStorage = (e: StorageEvent) => { if (e.key === 'ld-user-context') handleChange(); };
+    window.addEventListener('storage', handleStorage);
 
     return () => {
-      window.removeEventListener('ld-user-context-changed', handleUserContextChange);
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('ld-user-context-changed', handleChange);
+      window.removeEventListener('storage', handleStorage);
     };
-  }, [mounted]);
+  }, [readStoredUser]);
+
+  const userKey = userContext?.key ?? null;
 
   useEffect(() => {
-    if (!userContext) return;
-    const resolveAiConfig = async () => {
-      try {
-        const response = await fetch("/api/ai-config-eval", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            configKey: aiConfigKey,
-            userContext,
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setAiConfigSummary("unavailable");
-          setAiConfigDetail(data?.error || "error");
-          return;
-        }
-        const aiConfig = data?.value;
-        if (aiConfig && typeof aiConfig === "object") {
-          const variationKey =
-            aiConfig.variationKey ||
-            aiConfig.variation?.key ||
-            aiConfig.key ||
-            aiConfig.name ||
-            "unknown";
-          const modelName =
-            (aiConfig.model && (aiConfig.model.id || aiConfig.model.modelName || aiConfig.model.name)) ||
-            "unknown";
-          setAiConfigSummary(`${variationKey} • ${modelName}`);
-          setAiConfigDetail(
-            `variationIndex=${data?.variationIndex ?? "n/a"} reason=${data?.reason?.kind ?? "n/a"}`
-          );
-          return;
-        }
-        setAiConfigSummary("fallback");
-        setAiConfigDetail(null);
-      } catch {
-        setAiConfigSummary("unavailable");
-        setAiConfigDetail(null);
-      }
-    };
-    resolveAiConfig();
-  }, [userContext]);
+    if (!userKey || !userContext) return;
+
+    let stale = false;
+    fetchAiConfig(aiConfigKey, userContext).then((result) => {
+      if (stale) return;
+      setAiConfigSummary(result.summary);
+      setAiConfigDetail(result.detail);
+    });
+    return () => { stale = true; };
+  }, [userKey]);
 
 
   const scrollToBottom = (smooth = true) => {

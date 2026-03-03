@@ -11,7 +11,8 @@
     "ld:download-flags": "node scripts/download-flags-from-ld.js",
     "ld:compare": "node scripts/compare-local-vs-ld.js",
     "ld:upload": "node scripts/upload-to-ld.js",
-    "ld:add-tag": "node scripts/add-tag-to-flags.js"
+    "ld:add-tag": "node scripts/add-tag-to-flags.js",
+    "ld:generate-contexts": "node scripts/generate-multi-contexts.js"
   },
   "dependencies": {
     "@launchdarkly/node-server-sdk": "^9.10.5",

@@ -27,14 +27,8 @@ export default function JobDetailPage() {
   const jobId = params?.jobId as string;
   const flagsReady = useFlagsReady();
   
-  // Component visibility flags
   const canAccess = useFeatureFlag(FLAG_KEYS.SHOW_JOB_DETAIL_PAGE, true);
   const isBusinessMode = useFeatureFlag(FLAG_KEYS.SHOW_BUSINESS_USER_MODE, false);
-  const showTimeline = useFeatureFlag(FLAG_KEYS.SHOW_JOB_TIMELINE_SECTION, true);
-  const showPrepChecklist = useFeatureFlag(FLAG_KEYS.SHOW_JOB_PREP_CHECKLIST, true);
-  const showStarStories = useFeatureFlag(FLAG_KEYS.SHOW_JOB_STAR_STORIES, true);
-  const showMetrics = useFeatureFlag(FLAG_KEYS.SHOW_JOB_METRICS_CARDS, true);
-  const enableInlineEditing = useFeatureFlag(FLAG_KEYS.ENABLE_INLINE_EDITING, true);
 
   const initialJob = initialJobs.find((entry) => entry.id === jobId);
 
@@ -286,15 +280,13 @@ export default function JobDetailPage() {
     return (
       <div className={cn("group relative flex items-center gap-2", className)}>
         {children || value || placeholder || "—"}
-        {enableInlineEditing && (
-          <button
-            onClick={() => startEdit(field, value || "")}
-            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-background-tertiary rounded-lg transition-opacity"
-            title="Click to edit"
-          >
-            <Edit2 className="w-4 h-4 text-foreground-secondary" />
-          </button>
-        )}
+        <button
+          onClick={() => startEdit(field, value || "")}
+          className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-background-tertiary rounded-lg transition-opacity"
+          title="Click to edit"
+        >
+          <Edit2 className="w-4 h-4 text-foreground-secondary" />
+        </button>
       </div>
     );
   };
@@ -545,22 +537,19 @@ export default function JobDetailPage() {
       </Card>
 
       {/* Overview Metrics */}
-      {showMetrics && (
-        <section className="grid gap-4 lg:grid-cols-4">
-          <MetricCard label="Days since apply" value={job.metrics.daysSinceApply} />
-          <MetricCard label="Touchpoints" value={job.metrics.touchpoints} />
-          <MetricCard label="Confidence" value={`${job.metrics.confidence}%`} />
-          <MetricCard label="Response" value={job.response} />
-        </section>
-      )}
+      <section className="grid gap-4 lg:grid-cols-4">
+        <MetricCard label="Days since apply" value={job.metrics.daysSinceApply} />
+        <MetricCard label="Touchpoints" value={job.metrics.touchpoints} />
+        <MetricCard label="Confidence" value={`${job.metrics.confidence}%`} />
+        <MetricCard label="Response" value={job.response} />
+      </section>
 
       {/* Main Content - Two Column Layout */}
       <div className="grid gap-8 lg:grid-cols-[2fr,1fr]">
         {/* Left Column - Timeline and Prep Content */}
         <div className="space-y-8">
           {/* Timeline Section */}
-          {showTimeline && (
-            <section>
+          <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Timeline</h2>
                 <Button
@@ -674,7 +663,6 @@ export default function JobDetailPage() {
               </div>
             </Card>
           </section>
-          )}
 
           {/* Company Overview */}
           <section>
@@ -743,8 +731,7 @@ export default function JobDetailPage() {
         {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
           {/* Prep Checklist */}
-          {showPrepChecklist && (
-            <section>
+          <section>
               <h2 className="text-lg font-semibold mb-3">Prep Checklist</h2>
               <Card className="p-6">
                 <EditableList
@@ -755,11 +742,9 @@ export default function JobDetailPage() {
                 />
               </Card>
             </section>
-          )}
 
           {/* Tailored Stories */}
-          {showStarStories && (
-            <section>
+          <section>
               <h2 className="text-lg font-semibold mb-3">Tailored Stories</h2>
               <Card className="p-6 space-y-4">
                 {relatedStories.length > 0 ? (
@@ -789,7 +774,6 @@ export default function JobDetailPage() {
                 )}
               </Card>
             </section>
-          )}
         </div>
       </div>
     </div>

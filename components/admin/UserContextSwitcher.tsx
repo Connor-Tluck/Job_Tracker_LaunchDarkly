@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useLDClient } from "launchdarkly-react-client-sdk";
-import { getOrCreateUserContext, setUserContext, getDemoUsers, UserContext } from "@/lib/launchdarkly/userContext";
+import { getOrCreateUserContext, setUserContext, clearUserContext, getDemoUsers, UserContext } from "@/lib/launchdarkly/userContext";
+import { createMultiContext, createAnonymousContext, PRIVATE_ATTRIBUTES } from "@/lib/launchdarkly/multiContext";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { RefreshCw, User } from "lucide-react";
+import { RefreshCw, User, Monitor, Building2, EyeOff, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function UserContextSwitcher() {
   const ldClient = useLDClient();
   const [currentUser, setCurrentUser] = useState<UserContext | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const demoUsers = getDemoUsers();
   const isInternalUpdateRef = useRef(false);
@@ -26,11 +28,23 @@ export function UserContextSwitcher() {
     };
   }, [demoUsers]);
 
-  // Load user from localStorage
+  // Load user from localStorage — if nothing stored, we're anonymous
   const loadUser = useCallback(() => {
-    const user = getOrCreateUserContext();
-    setCurrentUser(user);
-    return user;
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('ld-user-context');
+    if (!stored) {
+      setCurrentUser(null);
+      setIsAnonymous(true);
+      return;
+    }
+    try {
+      const user = JSON.parse(stored) as UserContext;
+      setCurrentUser(user);
+      setIsAnonymous(false);
+    } catch {
+      setCurrentUser(null);
+      setIsAnonymous(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -70,7 +84,8 @@ export function UserContextSwitcher() {
   }, [loadUser]);
 
   const switchUser = async (user: UserContext) => {
-    if (currentUser?.key === user.key || isSwitching) return; // Already selected or switching
+    if (!isAnonymous && currentUser?.key === user.key) return;
+    if (isSwitching) return;
     
     console.log('🔄 Switching user context:', {
       from: currentUser?.key,
@@ -86,7 +101,8 @@ export function UserContextSwitcher() {
     
     // Update state IMMEDIATELY - use the user object directly, not a function
     // This ensures React sees it as a new value and updates immediately
-    setCurrentUser({ ...user }); // Create new object reference to force update
+    setCurrentUser({ ...user });
+    setIsAnonymous(false);
     
     console.log('✅ State updated to:', user.name, user.key);
     
@@ -101,27 +117,9 @@ export function UserContextSwitcher() {
     
     // Re-identify with LaunchDarkly (async, but don't block UI)
     if (ldClient) {
-      const ldContext = {
-        kind: "user",
-        key: user.key,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        subscriptionTier: user.subscriptionTier,
-        custom: {
-          role: user.role,
-          subscriptionTier: user.subscriptionTier,
-          signupDate: user.signupDate,
-          betaTester: user.betaTester,
-          companySize: user.companySize,
-          industry: user.industry,
-          timezone: user.timezone,
-          locale: user.locale,
-          location: user.location,
-        }
-      };
+      const ldContext = buildMultiContext(user);
       
-      console.log('📤 Sending context to LaunchDarkly:', ldContext);
+      console.log('📤 Sending multi-context to LaunchDarkly:', ldContext);
       
       // Don't await - let it run in background
       ldClient.identify(ldContext)
@@ -163,25 +161,7 @@ export function UserContextSwitcher() {
     });
 
     if (ldClient) {
-      const ldContext = {
-        kind: "user",
-        key: updated.key,
-        email: updated.email,
-        name: updated.name,
-        role: updated.role,
-        subscriptionTier: updated.subscriptionTier,
-        custom: {
-          role: updated.role,
-          subscriptionTier: updated.subscriptionTier,
-          signupDate: updated.signupDate,
-          betaTester: updated.betaTester,
-          companySize: updated.companySize,
-          industry: updated.industry,
-          timezone: updated.timezone,
-          locale: updated.locale,
-          location: updated.location,
-        },
-      };
+      const ldContext = buildMultiContext(updated);
 
       ldClient
         .identify(ldContext)
@@ -197,9 +177,66 @@ export function UserContextSwitcher() {
     setIsSwitching(false);
   };
 
-  if (!currentUser) {
-    return null;
-  }
+  const logOut = async () => {
+    if (isAnonymous || isSwitching) return;
+    setIsSwitching(true);
+
+    clearUserContext();
+    setCurrentUser(null);
+    setIsAnonymous(true);
+    isInternalUpdateRef.current = true;
+
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent('ld-user-context-changed'));
+    });
+
+    if (ldClient) {
+      const anonCtx = createAnonymousContext();
+      ldClient
+        .identify(anonCtx)
+        .catch(() => {})
+        .finally(() => setIsSwitching(false));
+      return;
+    }
+    setIsSwitching(false);
+  };
+
+  const buildMultiContext = useCallback((user: UserContext) => {
+    return createMultiContext({
+      user: {
+        key: user.key,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        subscriptionTier: user.subscriptionTier,
+        industry: user.industry,
+        companySize: user.companySize,
+        signupDate: user.signupDate,
+        betaTester: user.betaTester,
+      },
+      device: {
+        key: `dvc-${user.key}`,
+        os: navigator.platform || 'unknown',
+        type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        version: '1.0.0',
+      },
+      organization: user.industry ? {
+        key: `org-${user.key}`,
+        name: user.industry,
+        region: Intl.DateTimeFormat().resolvedOptions().timeZone?.startsWith('America') ? 'NA' : 'OTHER',
+      } : undefined,
+    });
+  }, []);
+
+  const renderAttr = (name: string, value: string | undefined, kind: keyof typeof PRIVATE_ATTRIBUTES) => {
+    const isPrivate = (PRIVATE_ATTRIBUTES[kind] as readonly string[]).includes(name);
+    return (
+      <div className="flex items-center gap-1">
+        <span className="text-foreground">{name}</span>: {value ?? 'n/a'}
+        {isPrivate && <EyeOff className="w-3 h-3 text-warning ml-1 shrink-0" title="Private attribute" />}
+      </div>
+    );
+  };
 
   return (
     <Card className="p-6 space-y-5">
@@ -208,9 +245,10 @@ export function UserContextSwitcher() {
         <h3 className="font-semibold">User Context Switcher</h3>
       </div>
       <p className="text-sm text-foreground-secondary">
-        Switch between demo users to test targeting rules. Flags update in real-time without page reload.
+        Switch between demo users to test targeting rules, or log out to test anonymous context evaluation.
       </p>
       
+      {/* Current User / Anonymous indicator */}
       <div className="space-y-3">
         <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
           Current User
@@ -219,31 +257,111 @@ export function UserContextSwitcher() {
           "bg-background-tertiary p-4 rounded-lg text-sm transition-all duration-300",
           isSwitching && "opacity-50"
         )}>
-          <div className="font-medium" key={`name-${currentUser.key}`}>{currentUser.name}</div>
-          <div className="text-foreground-secondary text-xs mt-1" key={`details-${currentUser.key}`}>
-            {currentUser.email} • {currentUser.role} • {currentUser.subscriptionTier}
-            {currentUser.betaTester && " • Beta Tester"}
-          </div>
+          {isAnonymous ? (
+            <>
+              <div className="font-medium text-foreground-muted">Anonymous User (No Login)</div>
+              <div className="text-foreground-secondary text-xs mt-1">
+                anonymous: true
+              </div>
+            </>
+          ) : currentUser ? (
+            <>
+              <div className="font-medium">{currentUser.name}</div>
+              <div className="text-foreground-secondary text-xs mt-1">
+                {currentUser.email} • {currentUser.role} • {currentUser.subscriptionTier}
+                {currentUser.betaTester && " • Beta Tester"}
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 
+      {/* Context Attributes */}
       <div className="space-y-3">
         <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
-          Targeting Attributes
+          {isAnonymous ? 'Anonymous Context' : 'Multi-Context Attributes'}
         </div>
-        <div className="bg-background-tertiary p-4 rounded-lg text-xs text-foreground-secondary space-y-1">
-          <div><span className="text-foreground">kind</span>: user</div>
-          <div><span className="text-foreground">key</span>: {currentUser.key}</div>
-          <div><span className="text-foreground">email</span>: {currentUser.email}</div>
-          <div><span className="text-foreground">name</span>: {currentUser.name}</div>
-          <div><span className="text-foreground">role</span>: {currentUser.role}</div>
-          <div><span className="text-foreground">subscriptionTier</span>: {currentUser.subscriptionTier}</div>
-          <div><span className="text-foreground">signupDate</span>: {currentUser.signupDate}</div>
-          <div><span className="text-foreground">betaTester</span>: {currentUser.betaTester ? "true" : "false"}</div>
-          <div><span className="text-foreground">companySize</span>: {currentUser.companySize ?? "n/a"}</div>
-          <div><span className="text-foreground">industry</span>: {currentUser.industry ?? "n/a"}</div>
-          <div><span className="text-foreground">timezone</span>: {currentUser.timezone ?? "n/a"}</div>
-          <div><span className="text-foreground">locale</span>: {currentUser.locale ?? "n/a"}</div>
+        <div className="text-xs font-medium text-primary mb-1 px-1">kind: multi</div>
+
+        {/* Authenticated contexts */}
+        {!isAnonymous && currentUser && (
+          <>
+            <div className="bg-background-tertiary p-4 rounded-lg text-xs text-foreground-secondary space-y-1">
+              <div className="flex items-center gap-1.5 mb-2">
+                <User className="w-3.5 h-3.5 text-primary" />
+                <span className="font-semibold text-foreground">User Context</span>
+              </div>
+              {renderAttr('key', currentUser.key, 'user')}
+              {renderAttr('email', currentUser.email, 'user')}
+              {renderAttr('name', currentUser.name, 'user')}
+              {renderAttr('role', currentUser.role, 'user')}
+              {renderAttr('subscriptionTier', currentUser.subscriptionTier, 'user')}
+              {renderAttr('signupDate', currentUser.signupDate, 'user')}
+              {renderAttr('betaTester', currentUser.betaTester ? "true" : "false", 'user')}
+              {renderAttr('companySize', currentUser.companySize ?? "n/a", 'user')}
+              {renderAttr('industry', currentUser.industry ?? "n/a", 'user')}
+            </div>
+
+            <div className="bg-background-tertiary p-4 rounded-lg text-xs text-foreground-secondary space-y-1">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Monitor className="w-3.5 h-3.5 text-primary" />
+                <span className="font-semibold text-foreground">Device Context</span>
+              </div>
+              {renderAttr('key', `dvc-${currentUser.key}`, 'device')}
+              {renderAttr('os', typeof navigator !== 'undefined' ? navigator.platform : 'unknown', 'device')}
+              {renderAttr('type', typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop', 'device')}
+              {renderAttr('version', '1.0.0', 'device')}
+            </div>
+
+            {currentUser.industry && (
+              <div className="bg-background-tertiary p-4 rounded-lg text-xs text-foreground-secondary space-y-1">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Building2 className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-semibold text-foreground">Organization Context</span>
+                </div>
+                {renderAttr('key', `org-${currentUser.key}`, 'organization')}
+                {renderAttr('name', currentUser.industry!, 'organization')}
+                {renderAttr('region', currentUser.timezone?.startsWith('America') ? 'NA' : 'OTHER', 'organization')}
+                {renderAttr('employees', '—', 'organization')}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Anonymous contexts */}
+        {isAnonymous && (
+          <>
+            <div className="bg-background-tertiary p-4 rounded-lg text-xs text-foreground-secondary space-y-1">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Monitor className="w-3.5 h-3.5 text-primary" />
+                <span className="font-semibold text-foreground">Device Context</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-foreground-muted/10 text-foreground-muted">anonymous</span>
+              </div>
+              <div><span className="text-foreground">key</span>: <span className="italic text-foreground-muted">auto-generated by SDK</span></div>
+              <div><span className="text-foreground">anonymous</span>: true</div>
+              <div><span className="text-foreground">os</span>: {typeof navigator !== 'undefined' ? navigator.platform : 'unknown'}</div>
+              <div><span className="text-foreground">type</span>: {typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'}</div>
+              <div><span className="text-foreground">version</span>: 1.0.0</div>
+            </div>
+
+            <div className="bg-background-tertiary p-4 rounded-lg text-xs text-foreground-secondary space-y-1">
+              <div className="flex items-center gap-1.5 mb-2">
+                <LogOut className="w-3.5 h-3.5 text-primary" />
+                <span className="font-semibold text-foreground">Session Context</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-foreground-muted/10 text-foreground-muted">anonymous</span>
+              </div>
+              <div><span className="text-foreground">key</span>: <span className="italic text-foreground-muted">auto-generated by SDK</span></div>
+              <div><span className="text-foreground">anonymous</span>: true</div>
+              <div><span className="text-foreground">referrer</span>: {typeof document !== 'undefined' ? (document.referrer || 'direct') : 'server'}</div>
+              <div><span className="text-foreground">locale</span>: {typeof navigator !== 'undefined' ? navigator.language : 'unknown'}</div>
+              <div><span className="text-foreground">timezone</span>: {typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'unknown'}</div>
+            </div>
+          </>
+        )}
+
+        <div className="flex items-center gap-1.5 text-[10px] text-foreground-muted px-1 pt-1">
+          <EyeOff className="w-3 h-3" />
+          <span>= private attribute (value hidden from LaunchDarkly events)</span>
         </div>
       </div>
 
@@ -252,13 +370,39 @@ export function UserContextSwitcher() {
           Switch To
         </div>
         <div className="space-y-5">
+          {/* Anonymous */}
+          <div className="space-y-3">
+            <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
+              Anonymous
+            </div>
+            <Button
+              variant={isAnonymous ? "primary" : "outline"}
+              size="lg"
+              className={cn(
+                "w-full justify-start h-auto py-4 px-5 transition-all duration-200",
+                isAnonymous && "ring-2 ring-primary/20 shadow-lg",
+                isSwitching && !isAnonymous && "opacity-50"
+              )}
+              onClick={logOut}
+              disabled={isSwitching || isAnonymous}
+            >
+              <div className="flex-1 text-left">
+                <div className="font-semibold text-base">Anonymous User</div>
+                <div className="text-xs opacity-75 mt-1">
+                  No login • anonymous: true
+                </div>
+              </div>
+            </Button>
+          </div>
+
+          {/* Job Seeker */}
           <div className="space-y-3">
             <div className="text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
               Job Seeker Role
             </div>
             <div className="space-y-3">
               {jobSeekerUsers.map((user) => {
-                const isActive = currentUser.key === user.key;
+                const isActive = !isAnonymous && currentUser?.key === user.key;
                 return (
                   <Button
                     key={user.key}
@@ -300,7 +444,7 @@ export function UserContextSwitcher() {
               </div>
               <div className="space-y-3">
                 {businessUsers.map((user) => {
-                  const isActive = currentUser.key === user.key;
+                  const isActive = !isAnonymous && currentUser?.key === user.key;
                   return (
                     <Button
                       key={user.key}
@@ -337,23 +481,39 @@ export function UserContextSwitcher() {
         </div>
       </div>
 
-      <div className="pt-3 border-t border-border">
-        <div className="flex items-center justify-between gap-3 mb-2">
+      <div className="pt-3 border-t border-border space-y-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="text-xs text-foreground-muted">
-            Testing an experiment? Regenerate the user key to enter a new bucket.
+            {isAnonymous
+              ? 'Logged out — viewing as anonymous visitor.'
+              : 'Testing an experiment? Regenerate the user key to enter a new bucket.'}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={regenerateKey}
-            disabled={isSwitching}
-          >
-            <RefreshCw className={cn("w-4 h-4", isSwitching && "animate-spin")} />
-            New bucket
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            {!isAnonymous && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={regenerateKey}
+                disabled={isSwitching}
+              >
+                <RefreshCw className={cn("w-4 h-4", isSwitching && "animate-spin")} />
+                New bucket
+              </Button>
+            )}
+            <Button
+              variant={isAnonymous ? "primary" : "outline"}
+              size="sm"
+              onClick={isAnonymous ? undefined : logOut}
+              disabled={isSwitching || isAnonymous}
+              className={isAnonymous ? "opacity-50 cursor-default" : ""}
+            >
+              <LogOut className="w-4 h-4" />
+              {isAnonymous ? 'Logged out' : 'Log out'}
+            </Button>
+          </div>
         </div>
         <p className="text-xs text-foreground-muted">
-          💡 Use this to test targeting rules. Configure rules in LaunchDarkly dashboard for different user attributes.
+          💡 Log out to test anonymous context evaluation — only device and session contexts are sent.
         </p>
       </div>
     </Card>

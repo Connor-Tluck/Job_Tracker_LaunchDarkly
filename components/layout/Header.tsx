@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Settings } from "lucide-react";
-import { getOrCreateUserContext, UserContext } from "@/lib/launchdarkly/userContext";
+import type { UserContext } from "@/lib/launchdarkly/userContext";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { UserMenu } from "@/components/user/UserMenu";
 
@@ -13,11 +13,18 @@ export function Header() {
   // Listen for user context changes
   useEffect(() => {
     const checkUserContext = () => {
-      const user = getOrCreateUserContext();
-      setCurrentUser(user);
+      const stored = localStorage.getItem('ld-user-context');
+      if (!stored) {
+        setCurrentUser(null);
+        return;
+      }
+      try {
+        setCurrentUser(JSON.parse(stored) as UserContext);
+      } catch {
+        setCurrentUser(null);
+      }
     };
 
-    // Check immediately
     checkUserContext();
 
     // Listen for custom event dispatched by UserContextSwitcher
@@ -43,7 +50,7 @@ export function Header() {
   }, []);
 
   const getSubscriptionTierLabel = (): string => {
-    if (!currentUser) return "Free";
+    if (!currentUser) return "Anonymous";
 
     // For demo purposes, Beta users should display as "Beta" (even if their tier is premium)
     if (currentUser.role === "beta-tester" || currentUser.betaTester) {
